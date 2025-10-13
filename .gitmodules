@@ -1,0 +1,3 @@
+[submodule "weather-app-shared"]
+	path = weather-app-shared
+	url = https://github.com/Chas-Malmo-Utvecklingsbyra/weather-app-shared.git
