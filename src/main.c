@@ -1,6 +1,7 @@
 #include <stdio.h>
 
-#include "weather-app-shared/core/tcp/server/tcp_server.h" // TODO: SS - Fix with makefile. We should be able to write '#include "tcp/server/tcp_server.h"'.
+#include "../include/weather-app-shared/core/tcp/server/tcp_server.h" /* TODO: SS - Fix with makefile. We should be able to write '#include "tcp/server/tcp_server.h"'.*/
+
 
 void on_received_bytes_from_client(const TCP_Server *server, const TCP_Server_Client *client, uint8_t *buffer, uint64_t buffer_size) {
     printf("Received %i bytes from client:\n");
@@ -14,7 +15,7 @@ void on_received_bytes_from_client(const TCP_Server *server, const TCP_Server_Cl
 }
 
 int main() {
-    printf("Hello, world! I am the server.\n");
+    printf("Hello, world! I am the Server.\n");
 
     TCP_Server server;
     memset(server, 0, sizeof(TCP_Server));
