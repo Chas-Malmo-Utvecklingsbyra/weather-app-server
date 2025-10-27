@@ -6,7 +6,7 @@ BUILD_DIR := build
 
 CVERSION := c90
 
-INCLUDE_DIRS := include
+INCLUDE_DIRS := include include/weather-app-shared
 
 CFLAGS := -std=$(CVERSION) $(addprefix -I,$(INCLUDE_DIRS)) -Wall -Wextra -MMD -MP
 
