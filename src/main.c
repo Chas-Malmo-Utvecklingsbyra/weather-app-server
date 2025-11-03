@@ -5,8 +5,8 @@
 #include <stdbool.h>
 
 void on_received_bytes_from_client(const TCP_Server *server, const TCP_Server_Client *client, const uint8_t *buffer, const uint32_t buffer_size) {
-    (void)server;
-    (void)client;
+    (void)server; // TODO: SS - Remove these later.
+    (void)client; // TODO: SS - Remove these later.
 
     printf("Received %u bytes from client:\n", buffer_size);
 
@@ -16,6 +16,27 @@ void on_received_bytes_from_client(const TCP_Server *server, const TCP_Server_Cl
         printf("%c", *(buffer + i));
     }
     printf("'\n");
+
+    // TODO: SS - Try to parse the contents of the buffer as a HTTP-request.
+    
+    // Here's an example for how we could send a response to the client.
+    // char response_buf[4096];
+    // memset(&response_buf[0], 0, sizeof(response_buf));
+    // http_create_response(&response_buf[0], sizeof(response_buf), // TEMP: SS - Send JSON instead.
+    //     "<html>"
+    //         "<head>"
+    //         "</head>"
+    //         "<body>"
+    //             "<p>Welcome to our site!</p>"
+    //         "</body>"
+    //     "</html>"
+    // );
+    
+    // // TODO: SS - Add support for sending a string-buffer to the 'client'.
+    // TCP_Server_Result send_result = tcp_server_send(client, &response_buf[0], sizeof(response_buf)); 
+    // if(send_result != TCP_Server_Result_OK) {
+    //     printf("Error! Failed to send bytes to client.\n");
+    // }
 }
 
 int main() {
@@ -42,6 +63,8 @@ int main() {
     printf("Server running.\n");
 
     while(true) { // TEMP: SS - tcp_server_is_running(server)?
+        // TODO: SS - Tick the server.
+
         // NOTE: SS - Sleep? Or get console-input here to be able to stop the server from the program.
     }
 
