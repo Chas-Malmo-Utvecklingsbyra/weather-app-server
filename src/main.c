@@ -50,6 +50,7 @@ int main() {
 
     TCP_Server_Result server_init_result = tcp_server_init(
         &server,
+        8080,
         &on_received_bytes_from_client
     );
     if(server_init_result != TCP_Server_Result_OK) 
