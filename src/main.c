@@ -4,10 +4,13 @@
 #include <string.h>
 #include <stdbool.h>
 
-void on_received_bytes_from_client(const TCP_Server *server, const TCP_Server_Client *client, const uint8_t *buffer, const uint32_t buffer_size) {
+#include "core/http/http.h"
+
+void on_received_bytes_from_client(TCP_Server *server, TCP_Server_Client *client, const uint8_t *buffer, const uint32_t buffer_size) {
     (void)server; // TODO: SS - Remove these later.
     (void)client; // TODO: SS - Remove these later.
 
+    /* TODO: SS - Try to parse the contents of the request buffer as a HTTP-request. */
     printf("Received %u bytes from client:\n", buffer_size);
 
     printf("'");
@@ -16,12 +19,23 @@ void on_received_bytes_from_client(const TCP_Server *server, const TCP_Server_Cl
         printf("%c", *(buffer + i));
     }
     printf("'\n");
+    char *response_string = "<h1>Hello world!</h1>";
 
-    // TODO: SS - Try to parse the contents of the buffer as a HTTP-request.
+    uint8_t outgoing_buffer[1024];
+    uint32_t outgoing_size = 0;
+    http_create_response(outgoing_buffer, sizeof(outgoing_buffer), response_string, strlen(response_string), &outgoing_size);
 
-    
+    TCP_Server_Result send_result = tcp_server_send_to_client(server, client, outgoing_buffer, outgoing_size);
 
-    
+    if(send_result != TCP_Server_Result_OK)
+    {
+        printf("Error on client send\n");
+
+    }
+    else{
+        printf("Send buffer content[0]: %u\n", client->outgoing_buffer[0]);
+    }
+
     // Here's an example for how we could send a response to the client.
     // char response_buf[4096];
     // memset(&response_buf[0], 0, sizeof(response_buf));
@@ -71,18 +85,21 @@ int main() {
     
 
     while(true) { // TEMP: SS - tcp_server_is_running(server)?
-        TCP_Server_Result server_accept_result = tcp_server_accept(&server);
-        if (server_accept_result != TCP_Server_Result_OK)
-        {
-            printf("Failed to accept TCP server. Result: %i.\n", server_accept_result); // TODO: SS - tcp_server_get_result_as_string(start_server_result)
-            return -1;
-        }
 
-        TCP_Server_Result server_read_result = tcp_server_read(&server);
-        if (server_read_result != TCP_Server_Result_OK)
-        {
-            printf("Failed to read TCP server. Result: %i.\n", server_read_result); // TODO: SS - tcp_server_get_result_as_string(start_server_result)
-            return -1;
+        TCP_Server_Result work_result = tcp_server_work(&server);
+
+        switch(work_result){
+            case TCP_Server_Result_OK:
+            {
+                break;
+            }
+            default: 
+            {
+                printf("Something went wrong\n");
+                break;
+            }
+
+
         }
 
         // TODO: SS - Tick the server.
