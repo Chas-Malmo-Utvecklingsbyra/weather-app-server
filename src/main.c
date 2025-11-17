@@ -7,6 +7,7 @@
 #include "core/http/parser.h"
 #include "core/weather/weather.h"
 #include "core/http/http.h"
+#include "core/config/config.h"
 
 void on_received_bytes_from_client(TCP_Server *server, TCP_Server_Client *client, const uint8_t *buffer, const uint32_t buffer_size) {
     (void)server; // TODO: SS - Remove these later.
@@ -108,15 +109,27 @@ void on_received_bytes_from_client(TCP_Server *server, TCP_Server_Client *client
     // }
 }
 
-int main() {
+int main(int argc, char** argv) {
     printf("Hello, world! I am the Server.\n");
+/*     Config_t config_config;
+    config_init(&config_config);
 
+    Config_Result config_load_result =  config_load(&config_config);
+    if(config_load_result != Config_Result_OK){
+        printf("Error config load\n");
+        return -1;
+    } */
+
+    printf("%i\n", argc);
+    printf("%s\n", argv[0]);
+    printf("%s\n", argv[1]);
+    int arg_port =  atoi(argv[1]);
     TCP_Server server;
     memset(&server, 0, sizeof(TCP_Server));
 
     TCP_Server_Result server_init_result = tcp_server_init(
         &server,
-        80,
+        arg_port,
         &on_received_bytes_from_client
     );
     if(server_init_result != TCP_Server_Result_OK) 
