@@ -4,6 +4,8 @@
 #include <string.h>
 #include <stdbool.h>
 
+#include "core/http/parser.h"
+
 #include "core/http/http.h"
 
 void on_received_bytes_from_client(TCP_Server *server, TCP_Server_Client *client, const uint8_t *buffer, const uint32_t buffer_size) {
@@ -19,8 +21,21 @@ void on_received_bytes_from_client(TCP_Server *server, TCP_Server_Client *client
         printf("%c", *(buffer + i));
     }
     printf("'\n");
-    char *response_string = "<h1>Hello world!</h1>";
+    char *response_string = NULL;
+    
+    Http_Request* httpblob =  Http_Parser_Parse((const char*)buffer);
+    if(httpblob == NULL){
+        printf("error parsing buffer\n");
+        return;
+    }
+    printf("METHOD: [%s]\n", httpblob->start_line.method);
+    printf("PATH: [%s]\n", httpblob->start_line.path);
 
+    if(strcmp(httpblob->start_line.path, "/") == 0){
+        response_string = "<h1>Hello there</h1>";
+    }else if(strcmp(httpblob->start_line.path, "/weather") == 0){
+        response_string = "<p>temperatur: 15C </p>";
+    }
     uint8_t outgoing_buffer[1024];
     uint32_t outgoing_size = 0;
     http_create_response(outgoing_buffer, sizeof(outgoing_buffer), response_string, strlen(response_string), &outgoing_size);
@@ -35,6 +50,9 @@ void on_received_bytes_from_client(TCP_Server *server, TCP_Server_Client *client
     else{
         printf("Send buffer content[0]: %u\n", client->outgoing_buffer[0]);
     }
+
+
+    Http_Parser_Cleanup(httpblob);
 
     // Here's an example for how we could send a response to the client.
     // char response_buf[4096];
