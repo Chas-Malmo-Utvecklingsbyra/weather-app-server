@@ -5,7 +5,7 @@
 #include <stdbool.h>
 
 #include "core/http/parser.h"
-
+#include "core/weather/weather.h"
 #include "core/http/http.h"
 
 void on_received_bytes_from_client(TCP_Server *server, TCP_Server_Client *client, const uint8_t *buffer, const uint32_t buffer_size) {
@@ -33,27 +33,61 @@ void on_received_bytes_from_client(TCP_Server *server, TCP_Server_Client *client
 
     if(strcmp(httpblob->start_line.path, "/") == 0){
         response_string = "<h1>Hello there</h1>";
+        uint8_t outgoing_buffer[1024];
+        uint32_t outgoing_size = 0;
+        http_create_response(outgoing_buffer, sizeof(outgoing_buffer), response_string, strlen(response_string), &outgoing_size);
+
+        TCP_Server_Result send_result = tcp_server_send_to_client(server, client, outgoing_buffer, outgoing_size);
+        
+        if(send_result != TCP_Server_Result_OK)
+        {
+            printf("Error on client send\n");
+
+        }
+        else{
+            printf("Send buffer content[0]: %u\n", client->outgoing_buffer[0]);
+        }
     }else if(strcmp(httpblob->start_line.path, "/weather") == 0){
-        response_string = "<p>temperatur: 15C </p>";
+        
+        Weather_Response weather_data = weather_get_data("https://api.open-meteo.com/v1/forecast?latitude=52.52&longitude=13.41&current_weather=true&current=temperature_2m,relative_humidity_2m,apparent_temperature,is_day,precipitation,rain,showers,snowfall,weather_code,cloud_cover,wind_speed_10m,wind_direction_10m,wind_gusts_10m,surface_pressure,pressure_msl&wind_speed_unit=ms");
+        response_string = weather_data.data;
+        uint8_t outgoing_buffer[1024];
+        uint32_t outgoing_size = 0;
+        http_create_response(outgoing_buffer, sizeof(outgoing_buffer), response_string, strlen(response_string), &outgoing_size);
+
+        TCP_Server_Result send_result = tcp_server_send_to_client(server, client, outgoing_buffer, outgoing_size);
+        
+        if(send_result != TCP_Server_Result_OK)
+        {
+            printf("Error on client send\n");
+
+        }
+        else{
+            printf("Send buffer content[0]: %u\n", client->outgoing_buffer[0]);
+        }
+        weather_dispose(&weather_data);
     }
+    
+    
+    /* 
     uint8_t outgoing_buffer[1024];
     uint32_t outgoing_size = 0;
     http_create_response(outgoing_buffer, sizeof(outgoing_buffer), response_string, strlen(response_string), &outgoing_size);
 
     TCP_Server_Result send_result = tcp_server_send_to_client(server, client, outgoing_buffer, outgoing_size);
-
-    if(send_result != TCP_Server_Result_OK)
+ */
+    /* if(send_result != TCP_Server_Result_OK)
     {
         printf("Error on client send\n");
 
     }
     else{
         printf("Send buffer content[0]: %u\n", client->outgoing_buffer[0]);
-    }
+    } */
+
 
 
     Http_Parser_Cleanup(httpblob);
-
     // Here's an example for how we could send a response to the client.
     // char response_buf[4096];
     // memset(&response_buf[0], 0, sizeof(response_buf));
