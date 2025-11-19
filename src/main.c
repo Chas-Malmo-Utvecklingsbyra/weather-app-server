@@ -26,7 +26,21 @@ void on_received_bytes_from_client(TCP_Server *server, TCP_Server_Client *client
     
     Http_Request* httpblob =  Http_Parser_Parse((const char*)buffer);
     if(httpblob == NULL){
-        printf("error parsing buffer\n");
+        response_string = "<h1>Invalid HTTP Request</h1>";
+        uint8_t outgoing_buffer[1024];
+        uint32_t outgoing_size = 0;
+        http_create_response(outgoing_buffer, sizeof(outgoing_buffer), response_string, strlen(response_string), &outgoing_size);
+
+        TCP_Server_Result send_result = tcp_server_send_to_client(server, client, outgoing_buffer, outgoing_size);
+
+        if(send_result != TCP_Server_Result_OK)
+        {
+            printf("Error on client send\n");
+
+        }
+        else{
+            printf("Send buffer content[0]: %u\n", client->outgoing_buffer[0]);
+        }
         return;
     }
     printf("METHOD: [%s]\n", httpblob->start_line.method);
@@ -67,6 +81,26 @@ void on_received_bytes_from_client(TCP_Server *server, TCP_Server_Client *client
             printf("Send buffer content[0]: %u\n", client->outgoing_buffer[0]);
         }
         weather_dispose(&weather_data);
+    }
+    else if (strcmp(httpblob->start_line.path, "/echo") == 0)
+    {
+        printf("Parsed json/html data: %s\n", httpblob->data);
+
+        response_string = httpblob->data;
+        uint8_t outgoing_buffer[1024];
+        uint32_t outgoing_size = 0;
+        http_create_response(outgoing_buffer, sizeof(outgoing_buffer), response_string, strlen(response_string), &outgoing_size);
+
+        TCP_Server_Result send_result = tcp_server_send_to_client(server, client, outgoing_buffer, outgoing_size);
+
+        if(send_result != TCP_Server_Result_OK)
+        {
+            printf("Error on client send\n");
+
+        }
+        else{
+            printf("Send buffer content[0]: %u\n", client->outgoing_buffer[0]);
+        }
     }
     
     
