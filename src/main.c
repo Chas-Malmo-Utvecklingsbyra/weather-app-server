@@ -84,9 +84,14 @@ void on_received_bytes_from_client(TCP_Server *server, TCP_Server_Client *client
     }
     else if (strcmp(httpblob->start_line.path, "/echo") == 0)
     {
-        printf("Parsed json/html data: %s\n", httpblob->data);
-
-        response_string = httpblob->data;
+        if (httpblob->data == NULL)
+        {
+            response_string = "<h1>No data</h1>";
+        }
+        else
+        {
+            response_string = httpblob->data;
+        }
         uint8_t outgoing_buffer[1024];
         uint32_t outgoing_size = 0;
         http_create_response(outgoing_buffer, sizeof(outgoing_buffer), response_string, strlen(response_string), &outgoing_size);
