@@ -44,7 +44,7 @@ void on_received_bytes_from_client(TCP_Server *server, TCP_Server_Client *client
         }
         return;
     }
-    printf("METHOD: [%s]\n", httpblob->start_line.method);
+    printf("METHOD: [%s]\n", Http_Request_Get_Method_String(httpblob));
     printf("PATH: [%s]\n", httpblob->start_line.path);
 
     /*
