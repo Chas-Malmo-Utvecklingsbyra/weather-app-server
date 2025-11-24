@@ -151,23 +151,21 @@ void on_received_bytes_from_client(TCP_Server *server, TCP_Server_Client *client
 int main(int argc, char** argv) {
     printf("Hello, world! I am the Server.\n");
     
-    Config_t cfg;
-    config_init(&cfg);
+    Config_t* cfg = config_get_instance("settings.json");
 
-    Config_Result config_load_result =  config_load(&cfg);
-    if (config_load_result != Config_Result_OK)
+    if (cfg == NULL)
     {
-        printf("Error reading config file.\n");
+        printf("Failed to load config. Error code: %d\n", config_instance_get_last_error());
         return -1;
     }
-    if(cfg.config_debug) 
+    if(cfg->config_debug) 
     {
         printf("Debug mode is enabled.\n");
         printf("config: \nserver_host: %s\nserver_port: %d\ndebug: %d\nmax_connections: %zu\n",
-        cfg.config_server_host ? cfg.config_server_host : "NULL",
-        cfg.config_server_port,
-        cfg.config_debug,
-        cfg.config_max_connections);
+        cfg->config_server_host ? cfg->config_server_host : "NULL",
+        cfg->config_server_port,
+        cfg->config_debug,
+        cfg->config_max_connections);
     }
 
     printf("%i\n", argc);
@@ -223,7 +221,9 @@ int main(int argc, char** argv) {
     }
 
     printf("Server stopped.\n");
-    config_dispose(&cfg);
+    
+    /* Dispose config on exit */
+    config_instance_dispose();
     tcp_server_dispose(&server);
 
     return 0;
