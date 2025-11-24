@@ -219,7 +219,7 @@ int main(int argc, char** argv) {
 
         // NOTE: SS - Sleep? Or get console-input here to be able to stop the server from the program.
     }
-
+    
     printf("Server stopped.\n");
     
     /* Dispose config on exit */
