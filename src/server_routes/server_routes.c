@@ -11,7 +11,7 @@ int handle_route(Http_Request *request, char *json_response)
     Config_t* cfg = config_get_instance(NULL);
 
     char* path = request->start_line.path;
-    char* method = request->start_line.method;
+    char* method = Http_Request_Get_Method_String(request);
     int error_code = 0;
     
     size_t i;
@@ -51,15 +51,16 @@ int get_query_params(const char* path, char* key, char* value)
     size_t number_of_params = 0;
     size_t key_index = 0;
     size_t value_index = 0;
-    
-    for (int i = 0; i < strlen(path); i++)
+    size_t i = 0;
+
+    for (i = 0; i < strlen(path); i++)
     {
         if(path[i] == '?' || path[i] == '&')
         {
             number_of_params++;
             key_index = i;
         }
-        else if(path[i] == '=' && number_of_params == 1)
+        else if(path[i] == '=' && number_of_params > 0)
         {
             strncpy(key, &path[key_index + 1], i - key_index - 1);
             value_index = i + 1;
@@ -67,6 +68,8 @@ int get_query_params(const char* path, char* key, char* value)
         else if((path[i] == '&' || i == strlen(path) -1))
         {
             strncpy(value, &path[value_index], i - value_index + 1);
+            key_index = i;
+            value_index = 0;
         }
         
     }
