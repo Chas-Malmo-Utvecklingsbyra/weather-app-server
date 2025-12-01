@@ -79,6 +79,7 @@ Route_Handler_Result handle_route(Http_Request *request, char **response)
  */
 int get_query_params(const char *path, const int args_count, char *key[], char *value[])
 {
+    (void)args_count;
     Config_t *cfg = config_get_instance(NULL);
     size_t number_of_params = 0;
     size_t key_index = 0;
