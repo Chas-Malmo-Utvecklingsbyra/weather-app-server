@@ -5,49 +5,81 @@
 #include "core/weather/api/openmeteo.h"
 #include "core/string/strdup.h"
 #include <stdio.h>
+#include "core/http/parser.h"
 
-int handle_route(Http_Request *request, char *json_response)
+
+/**
+ * @brief Handles routing for incoming HTTP requests.
+ * @param request Pointer to the Http_Request structure containing the request details.
+ * @param response Pointer to a char pointer where the JSON response will be stored.
+ * @return Route_Handler_Result Result of the route handling operation.
+ * @note The caller is responsible for freeing the memory allocated for the response.
+ */
+Route_Handler_Result handle_route(Http_Request *request, char **response)
 {
     Config_t* cfg = config_get_instance(NULL);
 
-    char* path = request->start_line.path;
+    if (cfg->config_debug)
+        printf("Requested path: %s\n", request->start_line.path);
+
     char* method = Http_Request_Get_Method_String(request);
-    int error_code = 0;
     
     size_t i;
     for (i = 0; i < cfg->allowed_routes_count; i++)
     {
-        if (strstr(path, cfg->allowed_routes[i].route) != NULL)
+        if (cfg->config_debug)
+            printf("Checking allowed route: %s %s\n", cfg->allowed_routes[i].method, cfg->allowed_routes[i].route);
+        
+        /* Check if the request path matches any allowed route */
+        if (strstr(request->start_line.path, cfg->allowed_routes[i].route) != NULL)
         {
             if (strcmp(cfg->allowed_routes[i].method, method) == 0)
             {
-                Http h = {0};
-                http_initialize(&h);
-                
-                struct curl_slist* headers = NULL;
+                if(cfg->config_debug) 
+                    printf("Matched allowed route: %s %s\n", cfg->allowed_routes[i].method, cfg->allowed_routes[i].route);
+                    
+                /* Populate needed headers or NULL*/
+                const char **headers = NULL;
 
-                http_get(&h, OPENMETEO_API, json_response, headers);
+                // char *key[] = {NULL};
+                // char *value[] = {NULL};
+                // get_query_params(request->start_line.path, cfg->allowed_routes[i].args_count, key, value);
 
-                if(json_response == NULL)
-                    error_code = - 1;
+                /* build the URL with query parameters */
+                const char *OPENMETEO_API_URL = "https://api.open-meteo.com/v1/forecast?latitude=55.707832&longitude=13.1866455";
                 
-                http_dispose(&h);
+                char* json_response;
+                http_get(OPENMETEO_API_URL, &json_response, headers);
+
+                if (cfg->config_debug)
+                    printf("Received JSON response: %s\n", json_response);
+
+                *response = strdup(json_response);
+                    
+                if (cfg->config_debug)
+                    printf("Response set to: %s\n", *response);
                 
-                return error_code;
+                if(*response == NULL)
+                    return Route_Handler_Result_Error;
+
+                return Route_Handler_Result_OK;
             }
         }
-        else
-        {
-            // return error
-            continue;
-        }
     }
-
-    return 0;
+    return Route_Handler_Result_Error;
 }
 
-int get_query_params(const char* path, char* key, char* value)
+/**
+ * @brief Extracts query parameters from a URL path.
+ * @param path The URL path containing query parameters.
+ * @param key Array of char pointers to store extracted keys.
+ * @param value Array of char pointers to store extracted values.
+ * @return int Number of query parameters extracted.
+ * @note work in progress
+ */
+int get_query_params(const char *path, const int args_count, char *key[], char *value[])
 {
+    Config_t *cfg = config_get_instance(NULL);
     size_t number_of_params = 0;
     size_t key_index = 0;
     size_t value_index = 0;
@@ -58,20 +90,26 @@ int get_query_params(const char* path, char* key, char* value)
         if(path[i] == '?' || path[i] == '&')
         {
             number_of_params++;
-            key_index = i;
+            key_index = i+1;
         }
         else if(path[i] == '=' && number_of_params > 0)
         {
-            strncpy(key, &path[key_index + 1], i - key_index - 1);
+            key[number_of_params - 1] = (char*)malloc((i - key_index) * sizeof(char));
+            strncpy(key[number_of_params - 1], &path[key_index], i - key_index - 1);
             value_index = i + 1;
+            if (cfg->config_debug) printf("Key: %s\n", key[number_of_params - 1]);
         }
         else if((path[i] == '&' || i == strlen(path) -1))
         {
-            strncpy(value, &path[value_index], i - value_index + 1);
-            key_index = i;
+            value[number_of_params - 1] = (char*)malloc((i - value_index + 2) * sizeof(char));
+            strncpy(value[number_of_params - 1], &path[value_index], i - value_index + 1);
+            
+            if(cfg->config_debug) 
+                printf("Value: %s\n", value[number_of_params - 1]);
+                
+            key_index = i+1;
             value_index = 0;
         }
-        
     }
     return 0;
 }

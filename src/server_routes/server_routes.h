@@ -6,24 +6,21 @@
 
 typedef struct Route_t Route_t;
 
-typedef enum HTTP_Method_Enum
+typedef enum Route_Handler_Result
 {
-    METHOD_GET,
-    METHOD_POST,
-    METHOD_PUT,
-    METHOD_DELETE,
-    METHOD_UNKNOWN
-} HTTP_Method_Enum;
+  Route_Handler_Result_Error = -1,
+  Route_Handler_Result_OK = 0
+} Route_Handler_Result;
 
 struct Route_t
 {
     const char* route;
-    HTTP_Method_Enum method; // Get
     void (*handler)(const char* route, char* response);
 };
 
-int handle_route(Http_Request *request, char *json_response);
+Route_Handler_Result handle_route(Http_Request *request, char **json_response);
 
+int get_query_params(const char *path, const int args_count, char *key[], char *value[]);
 
 #endif /* SERVER_ROUTES_H */
 
