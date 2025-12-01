@@ -1,6 +1,6 @@
 {
   "server_host" : "127.0.0.1",
-  "server_port" : 80,
+  "server_port" : 8080,
   "debug" : true,
   "max_connections" : 10,
   "postgresql_host" : "localhost",

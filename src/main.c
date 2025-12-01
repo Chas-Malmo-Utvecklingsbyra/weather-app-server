@@ -129,16 +129,19 @@ int main(int argc, char** argv) {
         cfg->allowed_routes[0].route);
     }
 
-    printf("%i\n", argc);
-    printf("%s\n", argv[0]);
-    printf("%s\n", argv[1]);
-    int arg_port =  atoi(argv[1]);
+    if (argc >= 2)
+    {
+        printf("%i\n", argc);
+        printf("%s\n", argv[0]);
+        printf("%s\n", argv[1]);
+    }
+
     TCP_Server server;
     memset(&server, 0, sizeof(TCP_Server));
 
     TCP_Server_Result server_init_result = tcp_server_init(
         &server,
-        arg_port,
+        cfg->config_server_port,
         &on_received_bytes_from_client
     );
     if(server_init_result != TCP_Server_Result_OK) 
