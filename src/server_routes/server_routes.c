@@ -41,15 +41,27 @@ Route_Handler_Result handle_route(Http_Request *request, char **response)
                 /* Populate needed headers or NULL*/
                 const char **headers = NULL;
 
-                // char *key[] = {NULL};
-                // char *value[] = {NULL};
-                // get_query_params(request->start_line.path, cfg->allowed_routes[i].args_count, key, value);
+                char **keys = malloc(sizeof(char*) * cfg->allowed_routes[i].args_count);
+                char **values = malloc(sizeof(char*) * cfg->allowed_routes[i].args_count);
+                
+                get_query_params(request->start_line.path, keys, values);
 
                 /* build the URL with query parameters */
                 const char *OPENMETEO_API_URL = "https://api.open-meteo.com/v1/forecast?latitude=55.707832&longitude=13.1866455";
+                char url_with_params[512];
+                /* place holder */
+                snprintf(url_with_params, sizeof(url_with_params), "%s&%s=%s&%s=%s",
+                         OPENMETEO_API_URL,
+                         keys[0], values[0],
+                         keys[1], values[1]);
+                         
+                if (cfg->config_debug)
+                    printf("Constructed URL: %s\n", url_with_params);
+                
+                
                 
                 char* json_response;
-                http_get(OPENMETEO_API_URL, &json_response, headers);
+                http_get(url_with_params, &json_response, headers);
 
                 if (cfg->config_debug)
                     printf("Received JSON response: %s\n", json_response);
@@ -62,6 +74,14 @@ Route_Handler_Result handle_route(Http_Request *request, char **response)
                 if(*response == NULL)
                     return Route_Handler_Result_Error;
 
+                for (size_t j = 0; j < cfg->allowed_routes[i].args_count; j++)
+                {
+                    if (keys[j]) free(keys[j]);
+                    if (values[j]) free(values[j]);
+                }
+                if(keys) free(keys);
+                if(values) free(values);
+                    
                 return Route_Handler_Result_OK;
             }
         }
@@ -75,40 +95,48 @@ Route_Handler_Result handle_route(Http_Request *request, char **response)
  * @param key Array of char pointers to store extracted keys.
  * @param value Array of char pointers to store extracted values.
  * @return int Number of query parameters extracted.
- * @note work in progress
+ * @note TODO: error handling for malformed URLs.
  */
-int get_query_params(const char *path, const int args_count, char *key[], char *value[])
+int get_query_params(const char *path, char **keys, char **values)
 {
     Config_t *cfg = config_get_instance(NULL);
     size_t number_of_params = 0;
     size_t key_index = 0;
     size_t value_index = 0;
     size_t i = 0;
-
+    
     for (i = 0; i < strlen(path); i++)
     {
-        if(path[i] == '?' || path[i] == '&')
+        if (path[i] == '?')
         {
             number_of_params++;
-            key_index = i+1;
+            key_index = i + 1;
         }
-        else if(path[i] == '=' && number_of_params > 0)
+        else if (path[i] == '=' && number_of_params > 0)
         {
-            key[number_of_params - 1] = (char*)malloc((i - key_index) * sizeof(char));
-            strncpy(key[number_of_params - 1], &path[key_index], i - key_index - 1);
+            keys[number_of_params - 1] = malloc((i - key_index + 1) * sizeof(char));
+
+            strncpy(keys[number_of_params - 1], &path[key_index], i - key_index);
+            keys[number_of_params - 1][i - key_index] = '\0';
+
             value_index = i + 1;
-            if (cfg->config_debug) printf("Key: %s\n", key[number_of_params - 1]);
+
+            if (cfg->config_debug)
+                printf("Key: %s\n", keys[number_of_params - 1]);
         }
-        else if((path[i] == '&' || i == strlen(path) -1))
+        else if ((path[i] == '&' || i == strlen(path) - 1))
         {
-            value[number_of_params - 1] = (char*)malloc((i - value_index + 2) * sizeof(char));
-            strncpy(value[number_of_params - 1], &path[value_index], i - value_index + 1);
-            
-            if(cfg->config_debug) 
-                printf("Value: %s\n", value[number_of_params - 1]);
-                
-            key_index = i+1;
-            value_index = 0;
+            size_t value_length = (path[i] == '&') ? (i - value_index) : (i - value_index + 1);
+            values[number_of_params - 1] = malloc((value_length + 1) * sizeof(char));
+
+            strncpy(values[number_of_params - 1], &path[value_index], value_length);
+            values[number_of_params - 1][value_length] = '\0';
+
+            if (cfg->config_debug)
+                printf("Value: %s\n", values[number_of_params - 1]);
+
+            key_index = i + 1;
+            number_of_params++;
         }
     }
     return 0;

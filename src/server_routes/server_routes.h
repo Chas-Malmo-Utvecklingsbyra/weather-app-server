@@ -20,21 +20,6 @@ struct Route_t
 
 Route_Handler_Result handle_route(Http_Request *request, char **json_response);
 
-int get_query_params(const char *path, const int args_count, char *key[], char *value[]);
+int get_query_params(const char *path, char **keys, char **values);
 
 #endif /* SERVER_ROUTES_H */
-
-    /*
-
-      "allowed_routes" : [
-        {
-          "route" : "/weather",
-          "method" : "POST"
-        },
-        {
-          "route" : "/weather",
-          "method" : "GET"
-        }
-      ]
-
-    */
