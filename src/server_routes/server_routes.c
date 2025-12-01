@@ -2,7 +2,7 @@
 #include "core/config/config.h"
 #include <string.h>
 #include "core/weather/http.h"
-#include "core/weather/api/openmeteo.h"
+#include "core/weather/api.h"
 #include "core/string/strdup.h"
 #include <stdio.h>
 #include "core/http/parser.h"
