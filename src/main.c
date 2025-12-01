@@ -51,20 +51,27 @@ void on_received_bytes_from_client(TCP_Server *server, TCP_Server_Client *client
         char* response = route(httpblob->start_line.path, httpblob->start_line.method);
     */
    
-    char* response = NULL;
-    handle_route(httpblob, response);
+    char* response;
+    /* Handle routing, TODO: add error handling etc*/
+    
+    handle_route(httpblob, &response);
+
+    printf("Generated response: %s\n", response);
     
     if(response == NULL)
     {
         response = "<h1>500 Server Error</h1>";
     }
     
-    printf("Response: %s\n", response);
-
     uint8_t outgoing_buffer[1024];
     uint32_t outgoing_size = 0;
     http_create_response(outgoing_buffer, sizeof(outgoing_buffer), response, strlen(response), &outgoing_size);
 
+    if(response != NULL)
+    {
+        free(response);
+    }
+    
     TCP_Server_Result send_result = tcp_server_send_to_client(server, client, outgoing_buffer, outgoing_size);
 
     if (send_result != TCP_Server_Result_OK)
@@ -121,11 +128,13 @@ int main(int argc, char** argv) {
     if(cfg->config_debug) 
     {
         printf("Debug mode is enabled.\n");
-        printf("config: \nserver_host: %s\nserver_port: %d\ndebug: %d\nmax_connections: %zu\n",
+        printf("config: \nserver_host: %s\nserver_port: %d\ndebug: %d\nmax_connections: %zu\nallowed_routes_count: %zu\nallowed_routes_route: %s\n",
         cfg->config_server_host ? cfg->config_server_host : "NULL",
         cfg->config_server_port,
         cfg->config_debug,
-        cfg->config_max_connections);
+        cfg->config_max_connections,
+        cfg->allowed_routes_count,
+        cfg->allowed_routes[0].route);
     }
 
     printf("%i\n", argc);

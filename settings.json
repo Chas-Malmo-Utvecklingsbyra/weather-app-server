@@ -8,12 +8,20 @@
   "locationiq_access_token" : "your12345token67890",
   "allowed_routes" : [
     {
-      "route" : "/",
-      "method" : "GET"
+      "route" : "/weather",
+      "method" : "GET",
+      "args_count" : 2,
+      "args" : 
+          [
+            "latitude",
+            "longitude"
+          ]
     },
     {
-      "route" : "/weather",
-      "method" : "GET"
+      "route" : "/",
+      "method" : "GET",
+      "args_count" : 0,
+      "args" : []
     }
   ]
 }
