@@ -50,66 +50,58 @@ void on_received_bytes_from_client(TCP_Server *server, TCP_Server_Client *client
     /*
         char* response = route(httpblob->start_line.path, httpblob->start_line.method);
     */
-   
-    char* response;
-    /* Handle routing, TODO: add error handling etc*/
-    
-    handle_route(httpblob, &response);
+   if(strcmp(Http_Request_Get_Method_String(httpblob), "OPTIONS") == 0){
+    printf("Hello from inside OPTIONS handling\n");
+        response_string = "<h1>OPTIONS</h1>";
+        uint8_t outgoing_buffer[1024];
+        uint32_t outgoing_size = 0;
+        http_create_response(outgoing_buffer, sizeof(outgoing_buffer), NULL, 0, &outgoing_size);
+        outgoing_size = strlen((char*)outgoing_buffer);
+        TCP_Server_Result send_result = tcp_server_send_to_client(server, client, outgoing_buffer, outgoing_size);
 
-    printf("Generated response: %s\n", response);
-    
-    if(response == NULL)
-    {
-        response = "<h1>500 Server Error</h1>";
+        if(send_result != TCP_Server_Result_OK)
+        {
+            printf("Error on client send\n");
+
+        }
+        else{
+            /* printf("Send buffer content[0]: %u\n", client->outgoing_buffer[0]); */
+        }
+
+   }
+   else{
+        char* response;
+        /* Handle routing, TODO: add error handling etc*/
+        
+        handle_route(httpblob, &response);
+
+        printf("Generated response: %s\n", response);
+        
+        if(response == NULL)
+        {
+            response = "<h1>500 Server Error</h1>";
+        }
+        
+        uint8_t outgoing_buffer[1024];
+        uint32_t outgoing_size = 0;
+        http_create_response(outgoing_buffer, sizeof(outgoing_buffer), response, strlen(response), &outgoing_size);
+
+        if(response != NULL)
+        {
+            free(response);
+        }
+        
+        TCP_Server_Result send_result = tcp_server_send_to_client(server, client, outgoing_buffer, outgoing_size);
+
+        if (send_result != TCP_Server_Result_OK)
+        {
+            printf("Error on client send\n");
+        }
+        else
+        {
+            printf("Send buffer content[0]: %u\n", client->outgoing_buffer[0]);
+        }
     }
-    
-    uint8_t outgoing_buffer[1024];
-    uint32_t outgoing_size = 0;
-    http_create_response(outgoing_buffer, sizeof(outgoing_buffer), response, strlen(response), &outgoing_size);
-
-    if(response != NULL)
-    {
-        free(response);
-    }
-    
-    TCP_Server_Result send_result = tcp_server_send_to_client(server, client, outgoing_buffer, outgoing_size);
-
-    if (send_result != TCP_Server_Result_OK)
-    {
-        printf("Error on client send\n");
-    }
-    else
-    {
-        printf("Send buffer content[0]: %u\n", client->outgoing_buffer[0]);
-    }
-
-    /*
-     else if (strcmp(httpblob->start_line.path, "/echo") == 0)
-     {
-         if (httpblob->data == NULL)
-         {
-             response_string = "<h1>No data</h1>";
-         }
-         else
-         {
-             response_string = httpblob->data;
-         }
-         uint8_t outgoing_buffer[1024];
-         uint32_t outgoing_size = 0;
-         http_create_response(outgoing_buffer, sizeof(outgoing_buffer), response_string, strlen(response_string), &outgoing_size);
-
-         TCP_Server_Result send_result = tcp_server_send_to_client(server, client, outgoing_buffer, outgoing_size);
-
-         if(send_result != TCP_Server_Result_OK)
-         {
-             printf("Error on client send\n");
-
-         }
-         else{
-             printf("Send buffer content[0]: %u\n", client->outgoing_buffer[0]);
-         }
-     }
-     */
 
     Http_Parser_Cleanup(httpblob);
 

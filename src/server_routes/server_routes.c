@@ -50,11 +50,13 @@ Route_Handler_Result handle_route(Http_Request *request, char **response)
                 const char *OPENMETEO_API_URL = "https://api.open-meteo.com/v1/forecast?latitude=55.707832&longitude=13.1866455";
                 char url_with_params[512];
                 /* place holder */
+                printf("Rigth before snprintf URL\n");
                 snprintf(url_with_params, sizeof(url_with_params), "%s&%s=%s&%s=%s",
                          OPENMETEO_API_URL,
                          keys[0], values[0],
                          keys[1], values[1]);
-                         
+                
+                printf("Rigth AFTER snprintf URL\n");
                 if (cfg->config_debug)
                     printf("Constructed URL: %s\n", url_with_params);
                 
