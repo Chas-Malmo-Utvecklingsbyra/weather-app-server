@@ -46,7 +46,7 @@ HTTP_STATUS_CODE handle_route(Http_Request *request, char **response)
                 char **keys = malloc(sizeof(char *) * cfg->allowed_routes[i].args_count);
                 char **values = malloc(sizeof(char *) * cfg->allowed_routes[i].args_count);
 
-                int param_count = get_query_params(request->start_line.path, keys, values);
+                int param_count = get_query_params(request->start_line.path, cfg->allowed_routes[i].args_count, keys, values);
                 
                 if (param_count < 0)
                 {
@@ -56,17 +56,29 @@ HTTP_STATUS_CODE handle_route(Http_Request *request, char **response)
                     for (size_t j = 0; j < cfg->allowed_routes[i].args_count; j++)
                     {
                         if (keys[j])
+                        {
                             free(keys[j]);
-
+                            keys[j] = NULL;
+                        }
+                            
                         if (values[j])
+                        {
                             free(values[j]);
+                            values[j] = NULL;
+                        }
                     }
 
-                    if (keys)
+                    if (keys != NULL)
+                    {
                         free(keys);
-                        
-                    if (values)
+                        keys = NULL;
+                    }
+
+                    if (values != NULL)
+                    {
                         free(values);
+                        values = NULL;
+                    }
 
                     return HTTP_STATUS_CODE_BAD_REQUEST;
                 }
@@ -80,20 +92,33 @@ HTTP_STATUS_CODE handle_route(Http_Request *request, char **response)
                 {
                     if (cfg->config_debug)
                         printf("Error: Failed to get weather data\n");
-                        
+
                     for (size_t j = 0; j < cfg->allowed_routes[i].args_count; j++)
                     {
                         if (keys[j])
+                        {
                             free(keys[j]);
+                            keys[j] = NULL;
+                        }
+
                         if (values[j])
+                        {
                             free(values[j]);
+                            values[j] = NULL;
+                        }
                     }
-                    
+
                     if (keys != NULL)
+                    {
                         free(keys);
+                        keys = NULL;
+                    }
                         
                     if (values != NULL)
+                    {
                         free(values);
+                        values = NULL;
+                    }
                     
                     return HTTP_STATUS_CODE_BAD_REQUEST;
                 }
@@ -106,17 +131,30 @@ HTTP_STATUS_CODE handle_route(Http_Request *request, char **response)
                 for (size_t j = 0; j < cfg->allowed_routes[i].args_count; j++)
                 {
                     if (keys[j])
+                    {
                         free(keys[j]);
+                        keys[j] = NULL;
+                    }
+
                     if (values[j])
+                    {
                         free(values[j]);
+                        values[j] = NULL;
+                    }
                 }
-                
+
                 if (keys != NULL)
+                {
                     free(keys);
-                    
+                    keys = NULL;
+                }
+
                 if (values != NULL)
+                {
                     free(values);
-                    
+                    values = NULL;
+                }
+
                 return HTTP_STATUS_CODE_OK;
             }
         }
@@ -132,7 +170,7 @@ HTTP_STATUS_CODE handle_route(Http_Request *request, char **response)
  * @return int Number of query parameters extracted.
  * @note TODO: error handling for malformed URLs.
  */
-Route_Get_Params_Result get_query_params(const char *path, char **keys, char **values)
+Route_Get_Params_Result get_query_params(const char *path, const int max_params, char **keys, char **values)
 {
     Config_t *cfg = config_get_instance(NULL);
     size_t number_of_params = 0;
@@ -154,9 +192,15 @@ Route_Get_Params_Result get_query_params(const char *path, char **keys, char **v
     /* TODO add check for parameters names if needed */
     for (; i < path_length; i++)
     {
+        if (number_of_params == (size_t)max_params)
+        {
+            if (cfg->config_debug)
+                printf("Error: More parameters than expected\n");
+            return Route_Get_Params_Result_Malformed_Request; /* More parameters than expected */
+        }
+        
         if (path[i] == '?')
         {
-            number_of_params++;
             key_index = i + 1;
             
             if (key_index >= path_length)
@@ -175,15 +219,15 @@ Route_Get_Params_Result get_query_params(const char *path, char **keys, char **v
                 return Route_Get_Params_Result_Malformed_Request; /* Empty key, malformed URL */
             }
             
-            keys[number_of_params - 1] = malloc((i - key_index + 1) * sizeof(char));
-            if (keys[number_of_params - 1] == NULL)
+            keys[number_of_params] = malloc((i - key_index + 1) * sizeof(char));
+            if (keys[number_of_params] == NULL)
             {
                 if (cfg->config_debug)
                     printf("Error: Memory allocation failed for key\n");
                 return Route_Get_Params_Result_Error; /* Memory allocation failure, Server error */
             }
-            strncpy(keys[number_of_params - 1], &path[key_index], i - key_index);
-            keys[number_of_params - 1][i - key_index] = '\0';
+            strncpy(keys[number_of_params], &path[key_index], i - key_index);
+            keys[number_of_params][i - key_index] = '\0';
 
             value_index = i + 1;
 
@@ -191,17 +235,17 @@ Route_Get_Params_Result get_query_params(const char *path, char **keys, char **v
             if (value_index >= path_length || path[value_index] == '&')
             {
                 if (cfg->config_debug)
-                    printf("Warning: Empty value for key '%s'\n", keys[number_of_params - 1]);
+                    printf("Warning: Empty value for key '%s'\n", keys[number_of_params]);
                 return Route_Get_Params_Result_Malformed_Request; /* Empty value, malformed URL */
             }
 
             if (cfg->config_debug)
-                printf("Key: %s\n", keys[number_of_params - 1]);
+                printf("Key: %s\n", keys[number_of_params]);
         }
         else if ((path[i] == '&' || i == path_length - 1))
         {
             /* Check if we have a matching key for this value */
-            if (number_of_params == 0 || !keys[number_of_params - 1])
+            if (!keys[number_of_params - 1])
             {
                 if (cfg->config_debug)
                     printf("Error: Value without key at position %zu\n", i);
@@ -209,26 +253,26 @@ Route_Get_Params_Result get_query_params(const char *path, char **keys, char **v
             }
             
             size_t value_length = (path[i] == '&') ? (i - value_index) : (i - value_index + 1);
-            values[number_of_params - 1] = malloc((value_length + 1) * sizeof(char));
+            values[number_of_params] = malloc((value_length + 1) * sizeof(char));
 
-            if (!values[number_of_params - 1])
+            if (!values[number_of_params])
             {
                 if (cfg->config_debug)
                     printf("Error: Memory allocation failed for value\n");
                 /* Clean up the key we just allocated */
-                free(keys[number_of_params - 1]);
-                keys[number_of_params - 1] = NULL;
+                free(keys[number_of_params]);
+                keys[number_of_params] = NULL;
                 return Route_Get_Params_Result_Error; /* Memory allocation failure, Server error */
             }
 
-            strncpy(values[number_of_params - 1], &path[value_index], value_length);
-            values[number_of_params - 1][value_length] = '\0';
+            strncpy(values[number_of_params], &path[value_index], value_length);
+            values[number_of_params][value_length] = '\0';
 
             if (cfg->config_debug)
-                printf("Value: %s\n", values[number_of_params - 1]);
-
+                printf("Value: %s\n", values[number_of_params]);
             key_index = i + 1;
             number_of_params++;
+            
         }
     }
     return number_of_params;

@@ -46,6 +46,6 @@ struct Route_t
 
 HTTP_STATUS_CODE handle_route(Http_Request *request, char **json_response);
 
-Route_Get_Params_Result get_query_params(const char *path, char **keys, char **values);
+Route_Get_Params_Result get_query_params(const char *path, const int max_params, char **keys, char **values);
 
 #endif /* SERVER_ROUTES_H */
