@@ -67,16 +67,39 @@ HTTP_STATUS_CODE handle_route(Http_Request *request, char **response)
                         
                     if (values)
                         free(values);
-                    
-                    printf("HERE0\n");
+
                     return HTTP_STATUS_CODE_BAD_REQUEST;
                 }
-                
-                printf("Fetching weather data for lat: %s, lon: %s\n", values[0], values[1]);
-                Weather_Response wr = weather_get_data(values[0], values[1]);
-                //char *json_response
-                *response = weather_convert_response_to_json(&wr);
 
+                if (cfg->config_debug)
+                    printf("Fetching weather data for lat: %s, lon: %s\n", values[0], values[1]);
+                    
+                Weather_Response weather_response = weather_get_data(values[0], values[1]);
+
+                if (weather_response.error == true)
+                {
+                    if (cfg->config_debug)
+                        printf("Error: Failed to get weather data\n");
+                        
+                    for (size_t j = 0; j < cfg->allowed_routes[i].args_count; j++)
+                    {
+                        if (keys[j])
+                            free(keys[j]);
+                        if (values[j])
+                            free(values[j]);
+                    }
+                    
+                    if (keys != NULL)
+                        free(keys);
+                        
+                    if (values != NULL)
+                        free(values);
+                    
+                    return HTTP_STATUS_CODE_BAD_REQUEST;
+                }
+
+                *response = weather_convert_response_to_json(&weather_response);
+                
                 if (cfg->config_debug)
                     printf("Response set to: %s\n", *response);
 
