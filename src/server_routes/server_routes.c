@@ -46,7 +46,8 @@ HTTP_STATUS_CODE handle_route(Http_Request *request, char **response)
                 char **keys = malloc(sizeof(char *) * cfg->allowed_routes[i].args_count);
                 char **values = malloc(sizeof(char *) * cfg->allowed_routes[i].args_count);
 
-                int param_count = get_query_params(request->start_line.path, cfg->allowed_routes[i].args_count, keys, values);
+                int param_count = get_query_params(request->start_line.path, 2, keys, values);
+                printf("Param count: %d\n", param_count);
                 
                 if (param_count < 0)
                 {
@@ -196,7 +197,8 @@ Route_Get_Params_Result get_query_params(const char *path, const int max_params,
         {
             if (cfg->config_debug)
                 printf("Error: More parameters than expected\n");
-            return Route_Get_Params_Result_Malformed_Request; /* More parameters than expected */
+            
+            break; /* Reached maximum expected parameters */
         }
         
         if (path[i] == '?')
@@ -210,7 +212,7 @@ Route_Get_Params_Result get_query_params(const char *path, const int max_params,
                 return Route_Get_Params_Result_No_Params; /* No query parameters, not necessarily an error */
             }
         }
-        else if (path[i] == '=' && number_of_params > 0)
+        else if (path[i] == '=')
         {
             if(i == key_index)
             {
