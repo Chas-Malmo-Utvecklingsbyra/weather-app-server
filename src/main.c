@@ -70,26 +70,35 @@ void on_received_bytes_from_client(TCP_Server *server, TCP_Server_Client *client
 
    }
    else{
-        char* response;
-        /* Handle routing, TODO: add error handling etc*/
+        char *response;
+        HTTP_STATUS_CODE code = handle_route(httpblob, &response);
+        char response_buffer[2048];
         
-        handle_route(httpblob, &response);
-
-        printf("Generated response: %s\n", response);
-        
-        if(response == NULL)
+        if (response != NULL)
         {
-            response = "<h1>500 Server Error</h1>";
+            printf("Response before handling code: %s\n", response);
+        }
+        
+        if(response != NULL)
+        {
+            strcpy(response_buffer, response);
+            free(response);
+        }
+        
+        if(code != HTTP_STATUS_CODE_OK)
+        {
+            if(code == HTTP_STATUS_CODE_NOT_FOUND)
+                strcpy(response_buffer, "<h1>404 Not Found</h1>");
+            else if(code == HTTP_STATUS_CODE_BAD_REQUEST)
+                strcpy(response_buffer, "<h1>400 Bad Request</h1>");
+            else
+                strcpy(response_buffer, "<h1>500 Server Error</h1>");
+            
         }
         
         uint8_t outgoing_buffer[1024];
         uint32_t outgoing_size = 0;
-        http_create_response(outgoing_buffer, sizeof(outgoing_buffer), response, strlen(response), &outgoing_size);
-
-        if(response != NULL)
-        {
-            free(response);
-        }
+        http_create_response(outgoing_buffer, sizeof(outgoing_buffer), response_buffer, strlen(response_buffer), &outgoing_size);
         
         TCP_Server_Result send_result = tcp_server_send_to_client(server, client, outgoing_buffer, outgoing_size);
 
