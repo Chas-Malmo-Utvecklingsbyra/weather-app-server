@@ -5,6 +5,8 @@
 #include "core/http/parser.h"
 #include "core/weather/http.h"
 
+#define MAX_PARAM_LENGTH 256
+
 typedef struct Route_t Route_t;
 
 typedef enum Route_Handler_Result
@@ -22,6 +24,7 @@ typedef enum Route_Get_Params_Result
   Route_Get_Params_Result_No_Params = -1
 } Route_Get_Params_Result;
 
+/* HTTP status codes TODO: Move somewhere else */
 typedef enum HTTP_STATUS_CODE
 {
   HTTP_STATUS_CODE_OK = 200,
@@ -29,14 +32,6 @@ typedef enum HTTP_STATUS_CODE
   HTTP_STATUS_CODE_NOT_FOUND = 404,
   HTTP_STATUS_CODE_INTERNAL_SERVER_ERROR = 500,
 } HTTP_STATUS_CODE;
-
-typedef enum Route_HTTP_Status_Code
-{
-  HTTP_STATUS_OK = 200,
-  HTTP_STATUS_BAD_REQUEST = 400,
-  HTTP_STATUS_NOT_FOUND = 404,
-  HTTP_STATUS_INTERNAL_SERVER_ERROR = 500,
-} HTTP_Status_Code;
 
 struct Route_t
 {
@@ -46,6 +41,6 @@ struct Route_t
 
 HTTP_STATUS_CODE handle_route(Http_Request *request, char **json_response);
 
-Route_Get_Params_Result get_query_params(const char *path, const int max_params, char **keys, char **values);
+int get_query_params(const char *path, const int max_params, char **keys, char **values);
 
 #endif /* SERVER_ROUTES_H */

@@ -70,14 +70,9 @@ void on_received_bytes_from_client(TCP_Server *server, TCP_Server_Client *client
 
    }
    else{
-        char *response;
+        char *response = NULL;
         HTTP_STATUS_CODE code = handle_route(httpblob, &response);
         char response_buffer[2048];
-        
-        if (response != NULL)
-        {
-            printf("Response before handling code: %s\n", response);
-        }
         
         if(response != NULL)
         {

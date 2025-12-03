@@ -55,4 +55,5 @@ dkms.conf
 *.dwo
 /build
 
-.vscode/settings.json
+# VSCode settings
+.vscode/*
