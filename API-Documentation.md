@@ -71,23 +71,29 @@ This specification outlines the primary functionalities and interactions for a w
 
 ```
 Client Request:
-GET /cities/<city>/weather?lat=<float>&lon=<float>
+GET /cities/<city>/weather?lat=<float>&lon=<float> -- NOT YET IMPLEMENTED
 OR
-GET /weather?lat=<float>&lon=<float>
+GET /weather?latitude=<float>&longitude=<float> -- IMPLEMENTED
+
+Example API usage:
+
+GET /weather?latitude=57.1579&longitude=39.3355 HTTP/1.1
+
+Maximum latitude and longitude: -90 - +90, going above it will throw a 400 Bad Request
 
 Server Response:
 {
-  "location": "London, UK",
-  "temperature": 15,
-  "unit": "C",
-  "condition": "Cloudy",
-  "feels_like": 13,
-  "humidity": 75,
+  "location": "Rostovsky District, Russia", -- Will be Unknown if location cant be found
+  "temperature": 0.6,
+  "unit": "C", -- Will always be C right now
+  "condition": "Cloudy", -- Clear Sky, Cloudy, Fog, Rain, Snow, Showers, Thunderstorms.
+  "feels_like": -2,
+  "humidity": 92,
   "wind": {
-    "speed": 10,
-    "direction": "NE"
+    "speed": 6, -- km/h
+    "direction": "227" -- Uses degrees instead of the common 'NE'/'N'/'S', etc.
   },
-  "sunrise": "07:15",
-  "sunset": "16:45",
-  "icon_url": "https://weatherapp.com/icons/cloudy.png"
+  "sunrise": "08:45",
+  "sunset": "15:44",
+  "icon_url": "https://weatherapp.com/icons/cloudy.png" -- Not yet implemented, do not use this.
 }
