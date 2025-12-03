@@ -73,7 +73,7 @@ This specification outlines the primary functionalities and interactions for a w
 Client Request:
 GET /cities/<city>/weather?lat=<float>&lon=<float> -- NOT YET IMPLEMENTED
 OR
-GET /weather?lat=<float>&lon=<float> -- IMPLEMENTED
+GET /weather?latitude=<float>&longitude=<float> -- IMPLEMENTED
 
 Example API usage:
 
