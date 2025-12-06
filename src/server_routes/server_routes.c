@@ -193,7 +193,7 @@ int get_query_params(const char *path, const int max_params, char **keys, char *
             if (keys[number_of_params] == NULL)
                 return Route_Get_Params_Result_Error; /* Memory allocation failure, Server error */
             
-            if (i - key_index > MAX_PARAM_LENGTH)
+            if (key_index > MAX_PARAM_LENGTH)
             {
                 return Route_Get_Params_Result_Malformed_Request;
             }
@@ -217,7 +217,7 @@ int get_query_params(const char *path, const int max_params, char **keys, char *
                 return Route_Get_Params_Result_Error; /* Memory allocation failure, Server error */
             }
 
-            if (i - key_index > MAX_PARAM_LENGTH)
+            if (value_length > MAX_PARAM_LENGTH)
             {
                 return Route_Get_Params_Result_Malformed_Request;
             }
