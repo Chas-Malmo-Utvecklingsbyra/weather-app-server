@@ -52,6 +52,6 @@ clean:
 	@rm -rf $(BUILD_DIR)
 
 valgrind:
-	valgrind --leak-check=yes build/bin/program
+	valgrind --leak-check=yes $(BIN)
 
 .PHONY: all build_core build_program clean
