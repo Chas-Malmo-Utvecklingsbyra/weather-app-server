@@ -7,6 +7,7 @@
 #include <stdio.h>
 #include "core/http/parser.h"
 #include "core/weather/weather.h"
+#include "core/json/fileHelper/fileHelper.h"
 
 
 void param_dispose(char **params, size_t count)
@@ -125,7 +126,28 @@ HTTP_STATUS_CODE handle_route(Http_Request *request, char **response)
                     }
                     *response = weather_convert_response_to_json(&weather_response);
                 }
-                /* else if(strcmp(cfg->allowed_routes[i].route, "/otherroute") == 0) */
+                else
+                {
+                    static char* file_locations[2] = { "src/frontend/index.html", "frontend/index.html" };
+                    bool found_frontend = false;
+
+                    for (int i = 0; i < 2; i++)
+                    {
+                        char* file = file_read_to_string(file_locations[i]);
+
+                        if (file != NULL)
+                        {
+                            *response = file;
+                            found_frontend = true;
+                            break;
+                        }
+                    }
+
+                    if (!found_frontend)
+                    {
+                        *response = strdup("Something went wrong with the Frontend files, check server_routes.c");
+                    }
+                }
 
                 param_dispose(keys, arg_count);
                 keys = NULL;
