@@ -30,8 +30,8 @@ void on_received_bytes_from_client(TCP_Server *server, TCP_Server_Client *client
         response_string = "<h1>Invalid HTTP Request</h1>";
         uint8_t outgoing_buffer[1024];
         uint32_t outgoing_size = 0;
-        int code = 400; /* Bad Request */
-        http_create_response(outgoing_buffer, sizeof(outgoing_buffer), code, response_string, strlen(response_string), &outgoing_size);
+        /* int code = 400; */ /* Bad Request */
+        http_create_response(outgoing_buffer, sizeof(outgoing_buffer), response_string, HTTP_STATUS_CODE_BAD_REQUEST, strlen(response_string), &outgoing_size, HTTP_CONTENT_TYPE_HTML);
 
         TCP_Server_Result send_result = tcp_server_send_to_client(server, client, outgoing_buffer, outgoing_size);
 
@@ -59,7 +59,7 @@ void on_received_bytes_from_client(TCP_Server *server, TCP_Server_Client *client
         uint32_t outgoing_size = 0;
         int code = 200; /* OK */
         
-        http_create_response(outgoing_buffer, sizeof(outgoing_buffer), code, NULL, 0, &outgoing_size);
+        http_create_response(outgoing_buffer, sizeof(outgoing_buffer), NULL, code, 0, &outgoing_size, HTTP_CONTENT_TYPE_HTML);
         outgoing_size = strlen((char*)outgoing_buffer);
         TCP_Server_Result send_result = tcp_server_send_to_client(server, client, outgoing_buffer, outgoing_size);
 
@@ -95,11 +95,11 @@ void on_received_bytes_from_client(TCP_Server *server, TCP_Server_Client *client
         uint32_t outgoing_size = 0;
         if (strncmp(httpblob->start_line.path, "/weather", 8) == 0)
         {
-            http_create_response(outgoing_buffer, sizeof(outgoing_buffer), response_buffer, strlen(response_buffer), &outgoing_size, HTTP_CONTENT_TYPE_JSON);
+            http_create_response(outgoing_buffer, sizeof(outgoing_buffer), response_buffer, code, strlen(response_buffer), &outgoing_size, HTTP_CONTENT_TYPE_JSON);
         }
         else
         {
-            http_create_response(outgoing_buffer, sizeof(outgoing_buffer), response_buffer, strlen(response_buffer), &outgoing_size, HTTP_CONTENT_TYPE_HTML);
+            http_create_response(outgoing_buffer, sizeof(outgoing_buffer), response_buffer, code, strlen(response_buffer), &outgoing_size, HTTP_CONTENT_TYPE_HTML);
         }
         
         TCP_Server_Result send_result = tcp_server_send_to_client(server, client, outgoing_buffer, outgoing_size);
