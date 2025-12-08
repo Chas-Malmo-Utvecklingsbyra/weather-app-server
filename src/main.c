@@ -30,7 +30,8 @@ void on_received_bytes_from_client(TCP_Server *server, TCP_Server_Client *client
         response_string = "<h1>Invalid HTTP Request</h1>";
         uint8_t outgoing_buffer[1024];
         uint32_t outgoing_size = 0;
-        http_create_response(outgoing_buffer, sizeof(outgoing_buffer), "400 Bad Request", response_string, strlen(response_string), &outgoing_size);
+        int code = 400; /* Bad Request */
+        http_create_response(outgoing_buffer, sizeof(outgoing_buffer), code, response_string, strlen(response_string), &outgoing_size);
 
         TCP_Server_Result send_result = tcp_server_send_to_client(server, client, outgoing_buffer, outgoing_size);
 
@@ -56,7 +57,9 @@ void on_received_bytes_from_client(TCP_Server *server, TCP_Server_Client *client
         response_string = "<h1>OPTIONS</h1>";
         uint8_t outgoing_buffer[1024];
         uint32_t outgoing_size = 0;
-        http_create_response(outgoing_buffer, sizeof(outgoing_buffer), "200 OK", NULL, 0, &outgoing_size);
+        int code = 200; /* OK */
+        
+        http_create_response(outgoing_buffer, sizeof(outgoing_buffer), code, NULL, 0, &outgoing_size);
         outgoing_size = strlen((char*)outgoing_buffer);
         TCP_Server_Result send_result = tcp_server_send_to_client(server, client, outgoing_buffer, outgoing_size);
 
@@ -77,40 +80,17 @@ void on_received_bytes_from_client(TCP_Server *server, TCP_Server_Client *client
         char http_status_code_string[32];
         http_status_code_string[0] = '\0';
        
-        /* TODO - LS: Use snprintf instead of strcpy for safer string operations, add buffer size checks etc. */
+        /* TODO - LS: Use somethingelse instead of strcpy for safer string operations, add buffer size checks etc. */
         if(response != NULL)
         {
             strcpy(response_buffer, response);
             free(response);
             response = NULL;
         }
-        /* move to http.c */
-        //if ((HTTP_Status_Code)code != HTTP_STATUS_CODE_OK)
-        //{
-        //    if ((HTTP_Status_Code)code == HTTP_STATUS_CODE_NOT_FOUND)
-        //    {
-        //        strcpy(response_buffer, "<h1>404 Not Found</h1>");
-        //        strcpy(http_status_code_string, "404 Not Found");
-        //    }
-        //    else if((HTTP_Status_Code)code == HTTP_STATUS_CODE_BAD_REQUEST)
-        //    {
-        //        strcpy(response_buffer, "<h1>400 Bad Request</h1>");
-        //        strcpy(http_status_code_string, "400 Bad Request");
-        //    }
-        //    else
-        //    {
-        //        strcpy(response_buffer, "<h1>500 Server Error</h1>");
-        //        strcpy(http_status_code_string, "500 Server Error");
-        //    }
-        //}
-        //else
-        //{
-        //        strcpy(http_status_code_string, "200 OK");
-        //}
         
         uint8_t outgoing_buffer[1024];
         uint32_t outgoing_size = 0;
-        http_create_response(outgoing_buffer, sizeof(outgoing_buffer), http_status_code_string, response_buffer, strlen(response_buffer), &outgoing_size);
+        http_create_response(outgoing_buffer, sizeof(outgoing_buffer), code, response_buffer, strlen(response_buffer), &outgoing_size);
         
         TCP_Server_Result send_result = tcp_server_send_to_client(server, client, outgoing_buffer, outgoing_size);
 
