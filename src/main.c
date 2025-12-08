@@ -9,15 +9,36 @@
 #include "core/http/http.h"
 #include "core/config/config.h"
 #include "server_routes/server_routes.h"
+#include "ratelimiter/ratelimiter.h"
 
 void on_received_bytes_from_client(TCP_Server *server, TCP_Server_Client *client, const uint8_t *buffer, const uint32_t buffer_size) {
     (void)server; // TODO: SS - Remove these later.
     (void)client; // TODO: SS - Remove these later.
 
+    printf("[Received from: %d]\n\n", client->unique_id);
+
+    bool is_limited = check_rate_limit(client);
+
+    if (is_limited)
+    {
+        struct sockaddr_in addr;
+        socklen_t addr_len = sizeof(addr);
+
+        if (getpeername(client->socket.file_descriptor, (struct sockaddr *)&addr, &addr_len) == -1) {
+            perror("getpeername");
+            return;
+        }
+
+        char ip[INET_ADDRSTRLEN];
+        inet_ntop(AF_INET, &addr.sin_addr, ip, sizeof(ip));
+
+        printf("Peer IP: %s\n", ip);
+        return;
+    }
+
     /* TODO: SS - Try to parse the contents of the request buffer as a HTTP-request. */
     printf("Received %u bytes from client:\n", buffer_size);
 
-    printf("'");
     uint32_t i = 0;
     for(; i < buffer_size; i++) {
         printf("%c", *(buffer + i));
