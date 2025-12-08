@@ -16,6 +16,12 @@
             "latitude",
             "longitude"
           ]
+    },
+    {
+      "route" : "/",
+      "method" : "GET",
+      "args_count" : 0,
+      "args" : []
     }
   ]
 }
