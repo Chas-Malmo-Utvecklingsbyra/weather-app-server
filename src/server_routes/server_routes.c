@@ -8,6 +8,7 @@
 #include "core/http/parser.h"
 #include "core/http/http.h"
 #include "core/weather/weather.h"
+#include "core/json/fileHelper/fileHelper.h"
 
 /**
  * @brief Frees memory allocated for query parameters.
@@ -133,17 +134,38 @@ int handle_route(Http_Request *request, char **response)
                         break;
                     }
                     *response = weather_convert_response_to_json(&weather_response);
-                    return_code = SERVER_ROUTE_RESULT_OK;
-                } /* else if(strcmp(cfg->allowed_routes[i].route, "/otherroute") == 0) */
+                }
+                else
+                {
+                    static char* file_locations[2] = { "src/frontend/index.html", "frontend/index.html" };
+                    bool found_frontend = false;
+
+                    for (int i = 0; i < 2; i++)
+                    {
+                        char* file = file_read_to_string(file_locations[i]);
+
+                        if (file != NULL)
+                        {
+                            *response = file;
+                            found_frontend = true;
+                            break;
+                        }
+                    }
+
+                    if (!found_frontend)
+                    {
+                        *response = strdup("Something went wrong with the Frontend files, check server_routes.c");
+                    }
+                }
+                if ((i + 1) == cfg->allowed_routes_count && return_code == SERVER_ROUTE_RESULT_UNKNOWN) /* No route matched */
+                {
+                    /* No matching route found */
+                    return_code = SERVER_ROUTE_RESULT_NOT_FOUND;
+                }
             }
         }
-        if ((i + 1) == cfg->allowed_routes_count && return_code == SERVER_ROUTE_RESULT_UNKNOWN) /* No route matched */
-        {
-            /* No matching route found */
-            return_code = SERVER_ROUTE_RESULT_NOT_FOUND;
-        }
     }
-    
+
     param_dispose(keys, arg_count);
     param_dispose(values, arg_count);
     keys = NULL;
@@ -160,13 +182,14 @@ int handle_route(Http_Request *request, char **response)
  * @param values An array of char pointers to store the parameter values.
  * @return int The number of parameters extracted, or a negative error code.
  */
+
 int get_query_params(const char *path, const int max_params, char **keys, char **values)
 {
     Config_t *cfg = config_get_instance(NULL);
     int number_of_params = 0;
     size_t key_index = 0;
     size_t value_index = 0;
-    
+
     /* Find the '?' to locate query string start */
     const char *query_start = strchr(path, '?');
     if (query_start == NULL)
@@ -184,8 +207,8 @@ int get_query_params(const char *path, const int max_params, char **keys, char *
         if (number_of_params == max_params || number_of_params < 0)
         {
             break; /* Reached maximum expected parameters, or encountered an error */
-        } 
-        
+        }
+
         if (path[i] == '?')
         {
             key_index = i + 1;
@@ -197,7 +220,7 @@ int get_query_params(const char *path, const int max_params, char **keys, char *
         }
         else if (path[i] == '=') /* End of param key, start of param value */
         {
-            if(i == key_index)
+            if (i == key_index)
             {
                 number_of_params = SERVER_ROUTE_RESULT_ERROR;
                 break; /* Empty key, malformed URL */
@@ -206,7 +229,7 @@ int get_query_params(const char *path, const int max_params, char **keys, char *
             size_t key_length = (i - key_index);
             strncpy(keys[number_of_params], &path[key_index], key_length);
             keys[number_of_params][key_length] = '\0';
-            
+
             value_index = i + 1;
             if (value_index >= path_length || path[value_index] == '&')
             {

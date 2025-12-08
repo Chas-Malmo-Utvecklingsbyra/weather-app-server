@@ -46,12 +46,14 @@ $(BIN): $(PROGRAM_OBJS) build_core
 	@$(CC) -o $@ $(shell find $(OBJ_DIR)/core -name "*.o") $(PROGRAM_OBJS) $(CFLAGS) $(DEFINES_PREFIXED)
 
 run: $(BIN)
+	mkdir -p $(BIN_DIR)/frontend
+	cp -r src/frontend/* $(BIN_DIR)/frontend
 	@$(BIN)
 
 clean:
 	@rm -rf $(BUILD_DIR)
 
 valgrind:
-	valgrind --leak-check=yes build/bin/program
+	valgrind --leak-check=yes $(BIN)
 
 .PHONY: all build_core build_program clean
