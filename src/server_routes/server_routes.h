@@ -5,41 +5,20 @@
 #include "core/http/parser.h"
 #include "core/weather/http.h"
 
-#define MAX_PARAM_LENGTH 256
+#define QUERY_PARAMETER_MAX_LENGTH 256
 
-typedef struct Route_t Route_t;
-
-typedef enum Route_Handler_Result
+typedef enum Server_Route_Result
 {
-  Route_Handler_Result_Error = -1,
-  Route_Handler_Result_OK = 0,
-  Route_Handler_Result_Route_Not_Found = 1,
-  Route_Handler_Result_No_Params = 2,
-} Route_Handler_Result;
+  SERVER_ROUTE_RESULT_UNKNOWN = -2,
+  SERVER_ROUTE_RESULT_ERROR = -1,
+  SERVER_ROUTE_RESULT_OK = 0,
+  SERVER_ROUTE_RESULT_BAD_REQUEST = 400,
+  SERVER_ROUTE_RESULT_NOT_FOUND = 404,
+  SERVER_ROUTE_RESULT_INTERNAL_SERVER_ERROR = 500
 
-typedef enum Route_Get_Params_Result
-{
-  Route_Get_Params_Result_Error = -3,
-  Route_Get_Params_Result_Malformed_Request = -2,
-  Route_Get_Params_Result_No_Params = -1
-} Route_Get_Params_Result;
+} Server_Route_Result;
 
-/* HTTP status codes TODO: Move somewhere else */
-typedef enum HTTP_STATUS_CODE
-{
-  HTTP_STATUS_CODE_OK = 200,
-  HTTP_STATUS_CODE_BAD_REQUEST = 400,
-  HTTP_STATUS_CODE_NOT_FOUND = 404,
-  HTTP_STATUS_CODE_INTERNAL_SERVER_ERROR = 500,
-} HTTP_STATUS_CODE;
-
-struct Route_t
-{
-    const char* route;
-    void (*handler)(const char* route, char* response);
-};
-
-HTTP_STATUS_CODE handle_route(Http_Request *request, char **json_response);
+int handle_route(Http_Request *request, char **json_response);
 
 int get_query_params(const char *path, const int max_params, char **keys, char **values);
 
