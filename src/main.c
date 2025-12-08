@@ -76,16 +76,20 @@ void on_received_bytes_from_client(TCP_Server *server, TCP_Server_Client *client
     {
         char *response = NULL;
         int code = handle_route(httpblob, &response);
-        char response_buffer[2048];
-        char http_status_code_string[32];
-        http_status_code_string[0] = '\0';
-       
+        char response_buffer[2048]; /* Change to malloc or define for response_buffer */
+        
         /* TODO - LS: Use somethingelse instead of strcpy for safer string operations, add buffer size checks etc. */
         if(response != NULL)
         {
             strcpy(response_buffer, response);
             free(response);
             response = NULL;
+            code = 200; /* OK */
+        }
+        else
+        {
+            strcpy(response_buffer, "<h1>Internal Server Error</h1>");
+            code = 500; /* Internal Server Error */
         }
         
         uint8_t outgoing_buffer[1024];
