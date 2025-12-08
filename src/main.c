@@ -93,7 +93,14 @@ void on_received_bytes_from_client(TCP_Server *server, TCP_Server_Client *client
         
         uint8_t outgoing_buffer[1024];
         uint32_t outgoing_size = 0;
-        http_create_response(outgoing_buffer, sizeof(outgoing_buffer), code, response_buffer, strlen(response_buffer), &outgoing_size);
+        if (strncmp(httpblob->start_line.path, "/weather", 8) == 0)
+        {
+            http_create_response(outgoing_buffer, sizeof(outgoing_buffer), response_buffer, strlen(response_buffer), &outgoing_size, HTTP_CONTENT_TYPE_JSON);
+        }
+        else
+        {
+            http_create_response(outgoing_buffer, sizeof(outgoing_buffer), response_buffer, strlen(response_buffer), &outgoing_size, HTTP_CONTENT_TYPE_HTML);
+        }
         
         TCP_Server_Result send_result = tcp_server_send_to_client(server, client, outgoing_buffer, outgoing_size);
 
