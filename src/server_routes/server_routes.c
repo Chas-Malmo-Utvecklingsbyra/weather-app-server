@@ -114,11 +114,11 @@ int handle_route(Http_Request *request, char **response)
                     size_t k = 0;
                     for (; k < arg_count; k++)
                     {
-                        if (strcmp(keys[k], "latitude") == 0)
+                        if (strcmp(keys[k], cfg->allowed_routes[i].args[0]) == 0)
                         {
                             latitude = values[k];
                         }
-                        else if (strcmp(keys[k], "longitude") == 0)
+                        else if (strcmp(keys[k], cfg->allowed_routes[i].args[1]) == 0)
                         {
                             longitude = values[k];
                         }
@@ -134,7 +134,9 @@ int handle_route(Http_Request *request, char **response)
                         break;
                     }
                     *response = weather_convert_response_to_json(&weather_response);
-                }
+                    return_code = SERVER_ROUTE_RESULT_OK;
+                    break;
+                } /* add specific route handling here */
                 else
                 {
                     static char* file_locations[2] = { "src/frontend/index.html", "frontend/index.html" };

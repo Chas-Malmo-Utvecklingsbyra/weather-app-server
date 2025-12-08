@@ -84,7 +84,6 @@ void on_received_bytes_from_client(TCP_Server *server, TCP_Server_Client *client
             strcpy(response_buffer, response);
             free(response);
             response = NULL;
-            code = 200; /* OK */
         }
         else
         {
