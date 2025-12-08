@@ -30,7 +30,8 @@ void on_received_bytes_from_client(TCP_Server *server, TCP_Server_Client *client
         response_string = "<h1>Invalid HTTP Request</h1>";
         uint8_t outgoing_buffer[1024];
         uint32_t outgoing_size = 0;
-        http_create_response(outgoing_buffer, sizeof(outgoing_buffer), response_string, strlen(response_string), &outgoing_size);
+        int code = 400; /* Bad Request */
+        http_create_response(outgoing_buffer, sizeof(outgoing_buffer), code, response_string, strlen(response_string), &outgoing_size);
 
         TCP_Server_Result send_result = tcp_server_send_to_client(server, client, outgoing_buffer, outgoing_size);
 
@@ -50,12 +51,15 @@ void on_received_bytes_from_client(TCP_Server *server, TCP_Server_Client *client
     /*
         char* response = route(httpblob->start_line.path, httpblob->start_line.method);
     */
-   if(strcmp(Http_Request_Get_Method_String(httpblob), "OPTIONS") == 0){
-    printf("Hello from inside OPTIONS handling\n");
+    if(strcmp(Http_Request_Get_Method_String(httpblob), "OPTIONS") == 0)
+    {
+        printf("Hello from inside OPTIONS handling\n");
         response_string = "<h1>OPTIONS</h1>";
         uint8_t outgoing_buffer[1024];
         uint32_t outgoing_size = 0;
-        http_create_response(outgoing_buffer, sizeof(outgoing_buffer), NULL, 0, &outgoing_size);
+        int code = 200; /* OK */
+        
+        http_create_response(outgoing_buffer, sizeof(outgoing_buffer), code, NULL, 0, &outgoing_size);
         outgoing_size = strlen((char*)outgoing_buffer);
         TCP_Server_Result send_result = tcp_server_send_to_client(server, client, outgoing_buffer, outgoing_size);
 
@@ -67,34 +71,36 @@ void on_received_bytes_from_client(TCP_Server *server, TCP_Server_Client *client
         else{
             /* printf("Send buffer content[0]: %u\n", client->outgoing_buffer[0]); */
         }
-
-   }
-   else{
+    }
+    else
+    {
         char *response = NULL;
-        HTTP_STATUS_CODE code = handle_route(httpblob, &response);
-        char response_buffer[2048];
+        int code = handle_route(httpblob, &response);
+        char response_buffer[2048]; /* Change to malloc or define for response_buffer */
         
+        /* TODO - LS: Use somethingelse instead of strcpy for safer string operations, add buffer size checks etc. */
         if(response != NULL)
         {
             strcpy(response_buffer, response);
             free(response);
             response = NULL;
         }
-        
-        if(code != HTTP_STATUS_CODE_OK)
+        else
         {
-            if(code == HTTP_STATUS_CODE_NOT_FOUND)
-                strcpy(response_buffer, "<h1>404 Not Found</h1>");
-            else if(code == HTTP_STATUS_CODE_BAD_REQUEST)
-                strcpy(response_buffer, "<h1>400 Bad Request</h1>");
-            else
-                strcpy(response_buffer, "<h1>500 Server Error</h1>");
-            
+            strcpy(response_buffer, "<h1>Internal Server Error</h1>");
+            code = 500; /* Internal Server Error */
         }
         
         uint8_t outgoing_buffer[1024];
         uint32_t outgoing_size = 0;
-        http_create_response(outgoing_buffer, sizeof(outgoing_buffer), response_buffer, strlen(response_buffer), &outgoing_size);
+        if (strncmp(httpblob->start_line.path, "/weather", 8) == 0)
+        {
+            http_create_response(outgoing_buffer, sizeof(outgoing_buffer), response_buffer, strlen(response_buffer), &outgoing_size, HTTP_CONTENT_TYPE_JSON);
+        }
+        else
+        {
+            http_create_response(outgoing_buffer, sizeof(outgoing_buffer), response_buffer, strlen(response_buffer), &outgoing_size, HTTP_CONTENT_TYPE_HTML);
+        }
         
         TCP_Server_Result send_result = tcp_server_send_to_client(server, client, outgoing_buffer, outgoing_size);
 
