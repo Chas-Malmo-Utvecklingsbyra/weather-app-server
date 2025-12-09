@@ -1,5 +1,5 @@
 #include "HttpServer.h"
-#include "../request_handler/request_handler.h"
+#include "request_handler/request_handler.h"
 #include "core/config/config.h"
 #include <string.h>
 #include "core/weather/http.h"
@@ -12,21 +12,6 @@
 #include "core/json/fileHelper/fileHelper.h"
 
 static HttpServer http_server;
-
-static void HttpServer_Handle_Request(TCP_Server* server, TCP_Server_Client* client, char* response_string, Http_Content_Type type)
-{
-    uint8_t buffer[TCP_MAX_CLIENT_BUFFER_SIZE];
-    uint32_t size = 0;
-
-    http_create_response(buffer, sizeof(buffer), response_string, HTTP_STATUS_CODE_BAD_REQUEST, strlen(response_string), &size, type);
-
-    TCP_Server_Result send_result = tcp_server_send_to_client(server, client, buffer, size);
-
-    if (send_result != TCP_Server_Result_OK)
-    {
-        printf("Error on client send\n");
-    }
-}
 
 void on_received_bytes_from_client(TCP_Server *server, TCP_Server_Client *client, const uint8_t *buffer, const uint32_t buffer_size) {
 
@@ -43,7 +28,7 @@ void on_received_bytes_from_client(TCP_Server *server, TCP_Server_Client *client
     Http_Request* httpblob =  Http_Parser_Parse((const char*)buffer);
     if(httpblob == NULL)
     {
-        HttpServer_Handle_Request(server, client, "<h1>Invalid HTTP Request</h1>", HTTP_CONTENT_TYPE_HTML);
+        handle_request(server, client, "<h1>Invalid HTTP Request</h1>", HTTP_CONTENT_TYPE_HTML);
         return;
     }
 
@@ -56,7 +41,7 @@ void on_received_bytes_from_client(TCP_Server *server, TCP_Server_Client *client
     if(strcmp(Http_Request_Get_Method_String(httpblob), "OPTIONS") == 0)
     {
         printf("Hello from inside OPTIONS handling\n");
-        HttpServer_Handle_Request(server, client, "<h1>OPTIONS</h1>", HTTP_CONTENT_TYPE_HTML);
+        handle_request(server, client, "<h1>OPTIONS</h1>", HTTP_CONTENT_TYPE_HTML);
     }
     else
     {
@@ -76,7 +61,7 @@ void on_received_bytes_from_client(TCP_Server *server, TCP_Server_Client *client
             api_result.code = ROUTE_HANDLER_RESULT_INTERNAL_SERVER_ERROR;
         }
 
-        HttpServer_Handle_Request(server, client, response_buffer, api_result.content_type);
+        handle_request(server, client, response_buffer, api_result.content_type);
 
         free(response_buffer);
         response_buffer = NULL;

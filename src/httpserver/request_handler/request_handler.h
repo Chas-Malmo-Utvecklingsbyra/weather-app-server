@@ -4,6 +4,7 @@
 #include <string.h>
 #include "core/http/parser.h"
 #include "core/http/http.h"
+#include "core/tcp/server/tcp_server.h"
 
 #define QUERY_PARAMETER_MAX_LENGTH 256
 
@@ -53,6 +54,16 @@ typedef enum Request_Handler_Result_E
  * @return HTTP status code indicating the result of the routing.
  */
 int handle_route(Http_Request *request, Request_Handler_Result_t *api_result);
+
+/**
+ * @brief Handles a HTTP request
+ * @param server Pointer to the server structure.
+ * @param client Pointer to the client structure.
+ * @param response_string The response to send back.
+ * @param type the content type (HTTP_CONTENT_TYPE_HTML or HTTP_CONTENT_TYPE_JSON).
+ * @return void.
+ */
+void handle_request(TCP_Server* server, TCP_Server_Client* client, char* response_string, Http_Content_Type type);
 
 /**
  * @brief Creates a QueryParams_t structure with a specified capacity.

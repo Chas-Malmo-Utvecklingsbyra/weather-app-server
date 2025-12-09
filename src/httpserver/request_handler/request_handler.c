@@ -344,3 +344,18 @@ void query_params_free(QueryParams_t *params)
         params->values = NULL;
     }
 }
+
+void handle_request(TCP_Server* server, TCP_Server_Client* client, char* response_string, Http_Content_Type type)
+{
+    uint8_t buffer[TCP_MAX_CLIENT_BUFFER_SIZE];
+    uint32_t size = 0;
+
+    http_create_response(buffer, sizeof(buffer), response_string, HTTP_STATUS_CODE_BAD_REQUEST, strlen(response_string), &size, type);
+
+    TCP_Server_Result send_result = tcp_server_send_to_client(server, client, buffer, size);
+
+    if (send_result != TCP_Server_Result_OK)
+    {
+        printf("Error on client send\n");
+    }
+}
