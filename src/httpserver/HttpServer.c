@@ -13,9 +13,22 @@
 
 static HttpServer http_server;
 
+static void HttpServer_Handle_Request(TCP_Server* server, TCP_Server_Client* client, char* response_string, Http_Content_Type type)
+{
+    uint8_t buffer[TCP_MAX_CLIENT_BUFFER_SIZE];
+    uint32_t size = 0;
+
+    http_create_response(buffer, sizeof(buffer), response_string, HTTP_STATUS_CODE_BAD_REQUEST, strlen(response_string), &size, type);
+
+    TCP_Server_Result send_result = tcp_server_send_to_client(server, client, buffer, size);
+
+    if (send_result != TCP_Server_Result_OK)
+    {
+        printf("Error on client send\n");
+    }
+}
+
 void on_received_bytes_from_client(TCP_Server *server, TCP_Server_Client *client, const uint8_t *buffer, const uint32_t buffer_size) {
-    (void)server; // TODO: SS - Remove these later.
-    (void)client; // TODO: SS - Remove these later.
 
     /* TODO: SS - Try to parse the contents of the request buffer as a HTTP-request. */
     printf("Received %u bytes from client:\n", buffer_size);
@@ -26,28 +39,14 @@ void on_received_bytes_from_client(TCP_Server *server, TCP_Server_Client *client
         printf("%c", *(buffer + i));
     }
     printf("'\n");
-    char *response_string = NULL;
     
     Http_Request* httpblob =  Http_Parser_Parse((const char*)buffer);
-    if(httpblob == NULL){
-        response_string = "<h1>Invalid HTTP Request</h1>";
-        uint8_t outgoing_buffer[1024];
-        uint32_t outgoing_size = 0;
-        /* int code = 400; */ /* Bad Request */
-        http_create_response(outgoing_buffer, sizeof(outgoing_buffer), response_string, HTTP_STATUS_CODE_BAD_REQUEST, strlen(response_string), &outgoing_size, HTTP_CONTENT_TYPE_HTML);
-
-        TCP_Server_Result send_result = tcp_server_send_to_client(&http_server.tcp_server, client, outgoing_buffer, outgoing_size);
-
-        if(send_result != TCP_Server_Result_OK)
-        {
-            printf("Error on client send\n");
-
-        }
-        else{
-            printf("Send buffer content[0]: %u\n", client->outgoing_buffer[0]);
-        }
+    if(httpblob == NULL)
+    {
+        HttpServer_Handle_Request(server, client, "<h1>Invalid HTTP Request</h1>", HTTP_CONTENT_TYPE_HTML);
         return;
     }
+
     printf("METHOD: [%s]\n", Http_Request_Get_Method_String(httpblob));
     printf("PATH: [%s]\n", httpblob->start_line.path);
 
@@ -57,23 +56,7 @@ void on_received_bytes_from_client(TCP_Server *server, TCP_Server_Client *client
     if(strcmp(Http_Request_Get_Method_String(httpblob), "OPTIONS") == 0)
     {
         printf("Hello from inside OPTIONS handling\n");
-        response_string = "<h1>OPTIONS</h1>";
-        uint8_t outgoing_buffer[1024];
-        uint32_t outgoing_size = 0;
-        int code = 200; /* OK */
-        
-        http_create_response(outgoing_buffer, sizeof(outgoing_buffer), NULL, code, 0, &outgoing_size, HTTP_CONTENT_TYPE_HTML);
-        outgoing_size = strlen((char*)outgoing_buffer);
-        TCP_Server_Result send_result = tcp_server_send_to_client(&http_server.tcp_server, client, outgoing_buffer, outgoing_size);
-
-        if(send_result != TCP_Server_Result_OK)
-        {
-            printf("Error on client send\n");
-
-        }
-        else{
-            /* printf("Send buffer content[0]: %u\n", client->outgoing_buffer[0]); */
-        }
+        HttpServer_Handle_Request(server, client, "<h1>OPTIONS</h1>", HTTP_CONTENT_TYPE_HTML);
     }
     else
     {
@@ -93,27 +76,13 @@ void on_received_bytes_from_client(TCP_Server *server, TCP_Server_Client *client
             api_result.code = ROUTE_HANDLER_RESULT_INTERNAL_SERVER_ERROR;
         }
 
-        uint8_t outgoing_buffer[TCP_MAX_CLIENT_BUFFER_SIZE];
-        uint32_t outgoing_size = 0; /* Not used? */
-        http_create_response(outgoing_buffer, sizeof(outgoing_buffer), response_buffer, api_result.code, strlen(response_buffer), &outgoing_size, api_result.content_type);
+        HttpServer_Handle_Request(server, client, response_buffer, api_result.content_type);
 
         free(response_buffer);
         response_buffer = NULL;
-
-        TCP_Server_Result send_result = tcp_server_send_to_client(server, client, outgoing_buffer, sizeof(outgoing_buffer));
-
-        if (send_result != TCP_Server_Result_OK)
-        {
-            printf("Error on client send\n");
-        }
-        else
-        {
-            printf("Send buffer content[0]: %u\n", client->outgoing_buffer[0]);
-        }
     }
 
     Http_Parser_Cleanup(httpblob);
-
 }
 
 
