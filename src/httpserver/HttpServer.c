@@ -77,35 +77,30 @@ void on_received_bytes_from_client(TCP_Server *server, TCP_Server_Client *client
     }
     else
     {
-        char *response = NULL;
-        int code = handle_route(httpblob, &response);
-        char response_buffer[2048]; /* Change to malloc or define for response_buffer */
-        
-        /* TODO - LS: Use somethingelse instead of strcpy for safer string operations, add buffer size checks etc. */
-        if(response != NULL)
+        Request_Handler_Result_t api_result = {0};
+        handle_route(httpblob, &api_result);
+        char *response_buffer = NULL;
+
+        if (api_result.response != NULL)
         {
-            strcpy(response_buffer, response);
-            free(response);
-            response = NULL;
+            response_buffer = strdup(api_result.response);
+            free(api_result.response);
+            api_result.response = NULL;
         }
         else
         {
-            strcpy(response_buffer, "<h1>Internal Server Error</h1>");
-            code = 500; /* Internal Server Error */
+            response_buffer = strdup("{\"error\":\"No response from handler\"}");
+            api_result.code = ROUTE_HANDLER_RESULT_INTERNAL_SERVER_ERROR;
         }
-        
-        uint8_t outgoing_buffer[1024];
-        uint32_t outgoing_size = 0;
-        if (strncmp(httpblob->start_line.path, "/weather", 8) == 0)
-        {
-            http_create_response(outgoing_buffer, sizeof(outgoing_buffer), response_buffer, code, strlen(response_buffer), &outgoing_size, HTTP_CONTENT_TYPE_JSON);
-        }
-        else
-        {
-            http_create_response(outgoing_buffer, sizeof(outgoing_buffer), response_buffer, code, strlen(response_buffer), &outgoing_size, HTTP_CONTENT_TYPE_HTML);
-        }
-        
-        TCP_Server_Result send_result = tcp_server_send_to_client(&http_server.tcp_server, client, outgoing_buffer, outgoing_size);
+
+        uint8_t outgoing_buffer[TCP_MAX_CLIENT_BUFFER_SIZE];
+        uint32_t outgoing_size = 0; /* Not used? */
+        http_create_response(outgoing_buffer, sizeof(outgoing_buffer), response_buffer, api_result.code, strlen(response_buffer), &outgoing_size, api_result.content_type);
+
+        free(response_buffer);
+        response_buffer = NULL;
+
+        TCP_Server_Result send_result = tcp_server_send_to_client(server, client, outgoing_buffer, sizeof(outgoing_buffer));
 
         if (send_result != TCP_Server_Result_OK)
         {
@@ -147,7 +142,7 @@ int HttpServer_Initialize()
     }
 
     memset(&http_server, 0, sizeof(HttpServer));
-
+    printf("Initializing TCP server on port %d...\n", cfg->config_server_port);
     TCP_Server_Result server_init_result = tcp_server_init(
         &http_server.tcp_server,
         cfg->config_server_port,

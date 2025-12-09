@@ -5,23 +5,28 @@
   "max_connections" : 10,
   "postgresql_host" : "localhost",
   "postgresql_api_key" : "asdasdd",
-  "locationiq_access_token" : "your12345token67890",
+  "locationiq_access_token" : "your_locationiq_token_here",
   "allowed_routes" : [
     {
-      "route" : "/weather",
-      "method" : "GET",
-      "args_count" : 2,
-      "args" : 
-          [
-            "latitude",
-            "longitude"
-          ]
+      "route": "/v1/weather",
+      "method": "GET",
+      "args_count": 2,
+      "args": ["latitude", "longitude"]
     },
     {
-      "route" : "/",
-      "method" : "GET",
-      "args_count" : 0,
-      "args" : []
+      "route": "/v1/city",
+      "method": "GET",
+      "args_count": 1,
+      "args": 
+      [
+        "city"
+      ]
+    },
+    {
+      "route": "/",
+      "method": "GET",
+      "args_count": 0,
+      "args": []
     }
   ]
 }
