@@ -1,5 +1,5 @@
 #include "HttpServer.h"
-#include "../server_routes/server_routes.h"
+#include "../request_handler/request_handler.h"
 #include "core/config/config.h"
 #include <string.h>
 #include "core/weather/http.h"
