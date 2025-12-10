@@ -16,10 +16,11 @@
     {
       "route": "/v1/city",
       "method": "GET",
-      "args_count": 1,
+      "args_count": 2,
       "args": 
       [
-        "city"
+        "city",
+        "limit"
       ]
     },
     {

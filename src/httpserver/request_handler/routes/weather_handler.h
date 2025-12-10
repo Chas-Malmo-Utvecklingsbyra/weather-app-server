@@ -1,0 +1,19 @@
+#ifndef WEATHER_HANDLER_H
+#define WEATHER_HANDLER_H
+
+#include "../request_handler.h"
+#include "../query_params/query_params.h"
+
+/**
+ * @brief Handles the /v1/weather endpoint request.
+ *
+ * Validates that latitude and longitude parameters are present,
+ * fetches weather data, and populates the result structure.
+ *
+ * @param params Pointer to parsed query parameters
+ * @param result Pointer to the result structure to populate
+ * @return int HTTP status code (200, 400, 500, etc.)
+ */
+int weather_handler_handle(QueryParams_t *params, Http_Response_t *http_response);
+
+#endif /* WEATHER_HANDLER_H */

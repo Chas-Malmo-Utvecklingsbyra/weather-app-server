@@ -28,48 +28,34 @@ void on_received_bytes_from_client(TCP_Server *server, TCP_Server_Client *client
     Http_Request* httpblob =  Http_Parser_Parse((const char*)buffer);
     if(httpblob == NULL)
     {
-        handle_request(server, client, "<h1>Invalid HTTP Request</h1>", HTTP_CONTENT_TYPE_HTML);
+        handle_request(server, client, "<h1>Invalid HTTP Request</h1>", HTTP_CONTENT_TYPE_HTML, HTTP_STATUS_CODE_BAD_REQUEST);
         return;
     }
 
     printf("METHOD: [%s]\n", Http_Request_Get_Method_String(httpblob));
     printf("PATH: [%s]\n", httpblob->start_line.path);
 
-    /*
-        char* response = route(httpblob->start_line.path, httpblob->start_line.method);
-    */
-    if(strcmp(Http_Request_Get_Method_String(httpblob), "OPTIONS") == 0)
+    Http_Response_t http_response = {0};
+    handle_route(httpblob, &http_response);
+    
+    char *response_buffer = NULL;
+    if (http_response.response_data != NULL)
     {
-        printf("Hello from inside OPTIONS handling\n");
-        handle_request(server, client, "<h1>OPTIONS</h1>", HTTP_CONTENT_TYPE_HTML);
+        response_buffer = strdup(http_response.response_data);
+        free(http_response.response_data);
+        http_response.response_data = NULL;
     }
     else
     {
-        Request_Handler_Result_t api_result = {0};
-        handle_route(httpblob, &api_result);
-        char *response_buffer = NULL;
-
-        if (api_result.response != NULL)
-        {
-            response_buffer = strdup(api_result.response);
-            free(api_result.response);
-            api_result.response = NULL;
-        }
-        else
-        {
-            response_buffer = strdup("{\"error\":\"No response from handler\"}");
-            api_result.code = ROUTE_HANDLER_RESULT_INTERNAL_SERVER_ERROR;
-        }
-
-        handle_request(server, client, response_buffer, api_result.content_type);
-
-        free(response_buffer);
-        response_buffer = NULL;
+        response_buffer = strdup("{\"error\":\"Internal Server Error\"}");
+        http_response.code = HTTP_STATUS_CODE_INTERNAL_SERVER_ERROR;
     }
-
+    handle_request(server, client, response_buffer, http_response.content_type, (HTTP_Status_Code)http_response.code);
+    free(response_buffer);
+    response_buffer = NULL;
+    
     Http_Parser_Cleanup(httpblob);
 }
-
 
 int HttpServer_Initialize()
 {
@@ -81,18 +67,6 @@ int HttpServer_Initialize()
     {
         printf("Failed to load config. Error code: %d\n", config_instance_get_last_error());
         return -1;
-    }
-
-    if(cfg->config_debug) 
-    {
-        printf("Debug mode is enabled.\n");
-        printf("config: \nserver_host: %s\nserver_port: %d\ndebug: %d\nmax_connections: %zu\nallowed_routes_count: %zu\nallowed_routes_route: %s\n",
-        cfg->config_server_host ? cfg->config_server_host : "NULL",
-        cfg->config_server_port,
-        cfg->config_debug,
-        cfg->config_max_connections,
-        cfg->allowed_routes_count,
-        cfg->allowed_routes[0].route);
     }
 
     memset(&http_server, 0, sizeof(HttpServer));
