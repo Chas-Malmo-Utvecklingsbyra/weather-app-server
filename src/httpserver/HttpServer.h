@@ -9,7 +9,7 @@ typedef struct
 }HttpServer;
 
 
-int HttpServer_Initialize();
-int HttpServer_Start();
-void HttpServer_Work();
-void HttpServer_Dispose();
+bool HttpServer_Initialize(HttpServer* http_server, uint16_t port, size_t max_connections);
+bool HttpServer_Start(HttpServer* http_server);
+void HttpServer_Work(HttpServer* http_server);
+void HttpServer_Dispose(HttpServer* http_server);
