@@ -2,7 +2,7 @@
 #define CITY_HANDLER_H
 
 #include "../request_handler.h"
-#include "../query_params/query_params.h"
+#include "../query_parameters/query_parameters.h"
 
 #define CITY_HANDLER_LOCATIONIQ_DEFAULT_LIMIT 5
 #define CITY_HANDLER_LOCATIONIQ_MIN_LIMIT 1
@@ -18,6 +18,6 @@
  * @param http_response Pointer to the result structure to populate
  * @return int HTTP status code (200, 400, 500, etc.)
  */
-int city_handler_handle(QueryParams_t *params, Http_Response_t *http_response);
+int city_handler_handle(QueryParameters_t *params, Request_Handler_Response_t *http_response);
 
 #endif /* CITY_HANDLER_H */

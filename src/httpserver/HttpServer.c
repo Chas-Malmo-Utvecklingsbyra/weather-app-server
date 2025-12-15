@@ -32,11 +32,11 @@ void on_received_bytes_from_client(TCP_Server *server, TCP_Server_Client *client
         return;
     }
 
-    printf("METHOD: [%s]\n", Http_Request_Get_Method_String(httpblob));
-    printf("PATH: [%s]\n", httpblob->start_line.path);
+    if(config_get_instance(NULL)->config_debug) printf("METHOD: [%s]\n", Http_Request_Get_Method_String(httpblob));
+    if(config_get_instance(NULL)->config_debug) printf("PATH: [%s]\n", httpblob->start_line.path);
 
-    Http_Response_t http_response = {0};
-    handle_route(httpblob, &http_response);
+    Request_Handler_Response_t http_response = {0};
+    request_handler_handle_route(httpblob, &http_response);
     
     char *response_buffer = NULL;
     if (http_response.response_data != NULL)
@@ -66,6 +66,13 @@ int HttpServer_Initialize()
     if (cfg == NULL)
     {
         printf("Failed to load config. Error code: %d\n", config_instance_get_last_error());
+        return -1;
+    }
+
+    /* Initialize request handler and register routes */
+    if (request_handler_init(10) != 0)
+    {
+        printf("Failed to initialize request handler\n");
         return -1;
     }
 
@@ -137,6 +144,7 @@ void HttpServer_Work()
 
 void HttpServer_Dispose()
 {
+    request_handler_dispose();
     config_instance_dispose();
     tcp_server_dispose(&http_server.tcp_server);
 }

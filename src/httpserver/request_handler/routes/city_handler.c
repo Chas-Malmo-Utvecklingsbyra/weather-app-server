@@ -2,25 +2,25 @@
 #include "core/locationiq/locationiq.h"
 #include "core/json/json_locationiq.h"
 
-int city_handler_handle(QueryParams_t *params, Http_Response_t *http_response)
+int city_handler_handle(QueryParameters_t *params, Request_Handler_Response_t *http_response)
 {
     if (params == NULL)
     {
-        set_request_error(http_response, HTTP_STATUS_CODE_INTERNAL_SERVER_ERROR, HTTP_CONTENT_TYPE_JSON, "{\"error\":\"Internal server error\"}");
+        request_handler_set_response(http_response, HTTP_STATUS_CODE_INTERNAL_SERVER_ERROR, HTTP_CONTENT_TYPE_JSON, "{\"error\":\"Internal server error\"}");
         return http_response->code;
     }
 
-    const char *city = query_params_get(params, "city");
+    const char *city = query_parameter_get(params, "city");
     if (city == NULL)
     {
-        set_request_error(http_response, HTTP_STATUS_CODE_BAD_REQUEST, HTTP_CONTENT_TYPE_JSON, "{\"error\":\"Missing required parameter: city\"}");
+        request_handler_set_response(http_response, HTTP_STATUS_CODE_BAD_REQUEST, HTTP_CONTENT_TYPE_JSON, "{\"error\":\"Missing required parameter: city\"}");
         return http_response->code;
     }
     
-    const int limit = query_params_get(params, "limit") ? atoi(query_params_get(params, "limit")) : CITY_HANDLER_LOCATIONIQ_DEFAULT_LIMIT;
+    const int limit = query_parameter_get(params, "limit") ? atoi(query_parameter_get(params, "limit")) : CITY_HANDLER_LOCATIONIQ_DEFAULT_LIMIT;
     if (limit < CITY_HANDLER_LOCATIONIQ_MIN_LIMIT || limit > CITY_HANDLER_LOCATIONIQ_MAX_LIMIT)
     {
-        set_request_error(http_response, HTTP_STATUS_CODE_BAD_REQUEST, HTTP_CONTENT_TYPE_JSON, "{\"error\":\"Invalid count parameter, must be between 1 and 10\"}");
+        request_handler_set_response(http_response, HTTP_STATUS_CODE_BAD_REQUEST, HTTP_CONTENT_TYPE_JSON, "{\"error\":\"Invalid count parameter, must be between 1 and 10\"}");
         return http_response->code;
     }
 
@@ -28,7 +28,7 @@ int city_handler_handle(QueryParams_t *params, Http_Response_t *http_response)
     char *locationiq_api_response = locationiq_api_call(city, limit);
     if (locationiq_api_response == NULL)
     {
-        set_request_error(http_response, HTTP_STATUS_CODE_BAD_REQUEST, HTTP_CONTENT_TYPE_JSON, "{\"error\":\"Failed to fetch city information\"}");
+        request_handler_set_response(http_response, HTTP_STATUS_CODE_BAD_REQUEST, HTTP_CONTENT_TYPE_JSON, "{\"error\":\"Failed to fetch city information\"}");
         return http_response->code;
     }
 
@@ -37,7 +37,7 @@ int city_handler_handle(QueryParams_t *params, Http_Response_t *http_response)
     
     if (parsed_location_response == NULL)
     {
-        set_request_error(http_response, HTTP_STATUS_CODE_INTERNAL_SERVER_ERROR, HTTP_CONTENT_TYPE_JSON, "{\"error\":\"Failed to parse city information\"}");
+        request_handler_set_response(http_response, HTTP_STATUS_CODE_INTERNAL_SERVER_ERROR, HTTP_CONTENT_TYPE_JSON, "{\"error\":\"Failed to parse city information\"}");
         return http_response->code;
     }
     

@@ -1,9 +1,9 @@
 #include "frontend_handler.h"
 #include "core/json/fileHelper/fileHelper.h"
 
-int frontend_handler_handle(QueryParams_t *params, Http_Response_t *http_response)
+int frontend_handler_handle(QueryParameters_t *params, Request_Handler_Response_t *http_response)
 {   
-    (void)params;  // Unused parameter
+    (void)params;  /* Unused parameter */
     /* Load frontend HTML file */
     static const char *file_locations[] = {"src/frontend/index.html", "frontend/index.html"};
     static const size_t location_count = sizeof(file_locations) / sizeof(file_locations[0]);
@@ -24,9 +24,9 @@ int frontend_handler_handle(QueryParams_t *params, Http_Response_t *http_respons
 
     if (!found_frontend)
     {
-        set_request_error(http_response, HTTP_STATUS_CODE_INTERNAL_SERVER_ERROR, HTTP_CONTENT_TYPE_HTML, "<html><body><h1>500 Internal Server Error</h1><p>Frontend not found</p></body></html>");
-
+        request_handler_set_response(http_response, HTTP_STATUS_CODE_INTERNAL_SERVER_ERROR, HTTP_CONTENT_TYPE_HTML, "<html><body><h1>500 Internal Server Error</h1><p>Frontend not found</p></body></html>");
         return http_response->code;
     }
+    
     return http_response->code;
 }
