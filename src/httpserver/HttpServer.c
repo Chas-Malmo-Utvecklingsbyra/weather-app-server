@@ -1,6 +1,5 @@
 #include "HttpServer.h"
 #include "request_handler/request_handler.h"
-#include "core/config/config.h"
 #include <string.h>
 #include "core/weather/http.h"
 #include "core/weather/api.h"
@@ -10,8 +9,7 @@
 #include "core/http/http.h"
 #include "core/weather/weather.h"
 #include "core/json/fileHelper/fileHelper.h"
-
-static HttpServer http_server;
+#include <stdlib.h>
 
 void on_received_bytes_from_client(TCP_Server *server, TCP_Server_Client *client, const uint8_t *buffer, const uint32_t buffer_size) {
 
@@ -71,75 +69,56 @@ void on_received_bytes_from_client(TCP_Server *server, TCP_Server_Client *client
 }
 
 
-int HttpServer_Initialize()
+bool HttpServer_Initialize(HttpServer* http_server, uint16_t port, size_t max_connections)
 {
-    printf("Hello, world! I am the Server.\n");
-    
-    Config_t* cfg = config_get_instance("settings.json");
+    /* TODO: HW - Use this */
+    (void)max_connections;
 
-    if (cfg == NULL)
-    {
-        printf("Failed to load config. Error code: %d\n", config_instance_get_last_error());
-        return -1;
-    }
-
-    if(cfg->config_debug) 
-    {
-        printf("Debug mode is enabled.\n");
-        printf("config: \nserver_host: %s\nserver_port: %d\ndebug: %d\nmax_connections: %zu\nallowed_routes_count: %zu\nallowed_routes_route: %s\n",
-        cfg->config_server_host ? cfg->config_server_host : "NULL",
-        cfg->config_server_port,
-        cfg->config_debug,
-        cfg->config_max_connections,
-        cfg->allowed_routes_count,
-        cfg->allowed_routes[0].route);
-    }
-
-    memset(&http_server, 0, sizeof(HttpServer));
-    printf("Initializing TCP server on port %d...\n", cfg->config_server_port);
+    memset(http_server, 0, sizeof(HttpServer));
+    printf("Initializing TCP server on port %d...\n", port);
     TCP_Server_Result server_init_result = tcp_server_init(
-        &http_server.tcp_server,
-        cfg->config_server_port,
+        &http_server->tcp_server,
+        port,
         &on_received_bytes_from_client
     );
 
     if(server_init_result != TCP_Server_Result_OK) 
     {
         printf("Failed to initialize TCP server. Result: %i.\n", server_init_result); // TODO: SS - tcp_server_get_result_as_string(server_init_result)
-        return -1;
+        return false;
     }
 
-    http_server.has_been_initialized = true;
+    http_server->has_been_initialized = true;
 
-    return 0;
+    return true;
 }
 
 
-int HttpServer_Start()
+bool HttpServer_Start(HttpServer* http_server)
 {
-    if (!http_server.has_been_initialized)
+    if (!http_server->has_been_initialized)
     {
         printf("Server has not yet been initialized\n");
-        return -1;
+        return false;
     }
 
-    TCP_Server_Result start_server_result = tcp_server_start(&http_server.tcp_server);
+    TCP_Server_Result start_server_result = tcp_server_start(&http_server->tcp_server);
     if(start_server_result != TCP_Server_Result_OK) 
     {
         printf("Failed to start TCP server. Result: %i.\n", start_server_result); // TODO: SS - tcp_server_get_result_as_string(start_server_result)
-        return -1;
+        return false;
     }
     printf("Server running.\n");
 
-    return 0;
+    return true;
 }
 
-void HttpServer_Work()
+void HttpServer_Work(HttpServer* http_server)
 {
     
     // TEMP: SS - tcp_server_is_running(server)?
 
-    TCP_Server_Result work_result = tcp_server_work(&http_server.tcp_server);
+    TCP_Server_Result work_result = tcp_server_work(&http_server->tcp_server);
 
     switch(work_result){
         case TCP_Server_Result_OK:
@@ -156,8 +135,7 @@ void HttpServer_Work()
     /* Dispose config on exit */
 }
 
-void HttpServer_Dispose()
+void HttpServer_Dispose(HttpServer* http_server)
 {
-    config_instance_dispose();
-    tcp_server_dispose(&http_server.tcp_server);
+    tcp_server_dispose(&http_server->tcp_server);
 }
