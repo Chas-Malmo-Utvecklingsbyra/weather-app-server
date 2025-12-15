@@ -6,7 +6,7 @@ typedef struct
 {
     TCP_Server tcp_server;
     uint16_t port;
-}HttpServer;
+} HttpServer;
 
 
 bool HttpServer_Initialize(HttpServer* http_server, size_t max_connections);
