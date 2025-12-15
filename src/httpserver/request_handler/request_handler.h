@@ -63,7 +63,7 @@ int handle_route(Http_Request *request, Request_Handler_Result_t *api_result);
  * @param type the content type (HTTP_CONTENT_TYPE_HTML or HTTP_CONTENT_TYPE_JSON).
  * @return void.
  */
-void handle_request(TCP_Server* server, TCP_Server_Client* client, char* response_string, Http_Content_Type type);
+void send_response_to_client(TCP_Server* server, TCP_Server_Client* client, char* response_string, Http_Content_Type type, HTTP_Status_Code status_code);
 
 /**
  * @brief Creates a QueryParams_t structure with a specified capacity.
@@ -94,5 +94,7 @@ const char *query_params_get(QueryParams_t *params, const char *key);
  * @param params Pointer to the QueryParams_t structure to free.
  */
 void query_params_free(QueryParams_t *params);
+
+void dispose_request_handler_response(Request_Handler_Result_t* api_result);
 
 #endif /* REQUEST_HANDLER_H */

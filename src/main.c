@@ -36,13 +36,13 @@ int main(void)
     
     HttpServer http_server;
 
-    if (HttpServer_Initialize(&http_server, port, max_connections) == false)
+    if (HttpServer_Initialize(&http_server, max_connections) == false)
     {
         printf("Server failed to Initialize\n");
         return -1;
     }
 
-    if (HttpServer_Start(&http_server) == false)
+    if (HttpServer_Start(&http_server, port) == false)
     {
         printf("Server failed to start\n");
         return -1;

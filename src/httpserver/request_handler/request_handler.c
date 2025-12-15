@@ -345,12 +345,12 @@ void query_params_free(QueryParams_t *params)
     }
 }
 
-void handle_request(TCP_Server* server, TCP_Server_Client* client, char* response_string, Http_Content_Type type)
+void send_response_to_client(TCP_Server* server, TCP_Server_Client* client, char* response_string, Http_Content_Type type, HTTP_Status_Code status_code)
 {
     uint8_t buffer[TCP_MAX_CLIENT_BUFFER_SIZE];
     uint32_t size = 0;
 
-    http_create_response(buffer, sizeof(buffer), response_string, HTTP_STATUS_CODE_BAD_REQUEST, strlen(response_string), &size, type);
+    http_create_response(buffer, sizeof(buffer), response_string, status_code, strlen(response_string), &size, type);
 
     TCP_Server_Result send_result = tcp_server_send_to_client(server, client, buffer, size);
 
@@ -358,4 +358,10 @@ void handle_request(TCP_Server* server, TCP_Server_Client* client, char* respons
     {
         printf("Error on client send\n");
     }
+}
+
+void dispose_request_handler_response(Request_Handler_Result_t* api_result)
+{
+    free(api_result->response);
+    api_result->response = NULL;
 }
