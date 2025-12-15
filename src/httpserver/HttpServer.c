@@ -136,28 +136,23 @@ int HttpServer_Start()
 
 void HttpServer_Work()
 {
-    while(true) 
-    { // TEMP: SS - tcp_server_is_running(server)?
+    
+    // TEMP: SS - tcp_server_is_running(server)?
 
-        TCP_Server_Result work_result = tcp_server_work(&http_server.tcp_server);
+    TCP_Server_Result work_result = tcp_server_work(&http_server.tcp_server);
 
-        switch(work_result){
-            case TCP_Server_Result_OK:
-            {
-                break;
-            }
-            default: 
-            {
-                printf("Something went wrong\n");
-                break;
-            }
+    switch(work_result){
+        case TCP_Server_Result_OK:
+        {
+            break;
         }
-
-        // TODO: SS - Tick the server.
-        // NOTE: SS - Sleep? Or get console-input here to be able to stop the server from the program.
+        default: 
+        {
+            printf("Something went wrong\n");
+            break;
+        }
     }
 
-    printf("Server stopped.\n");
     /* Dispose config on exit */
 }
 

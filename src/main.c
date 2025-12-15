@@ -15,7 +15,10 @@ int main(void)
         return -1;
     }
 
-    HttpServer_Work();
+    while (1)
+    {
+        HttpServer_Work();
+    }
 
     HttpServer_Dispose();
     return 0;
