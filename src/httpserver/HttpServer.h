@@ -5,11 +5,11 @@
 typedef struct
 {
     TCP_Server tcp_server;
-    bool has_been_initialized;
-}HttpServer;
+    uint16_t port;
+} HttpServer;
 
 
-int HttpServer_Initialize();
-int HttpServer_Start();
-void HttpServer_Work();
-void HttpServer_Dispose();
+bool HttpServer_Initialize(HttpServer* http_server, size_t max_connections);
+bool HttpServer_Start(HttpServer* http_server, uint16_t port);
+void HttpServer_Work(HttpServer* http_server);
+void HttpServer_Dispose(HttpServer* http_server);
