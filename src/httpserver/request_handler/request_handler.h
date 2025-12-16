@@ -8,34 +8,15 @@
 #include "core/http/parser.h"
 #include "core/http/http.h"
 #include "core/tcp/server/tcp_server.h"
-
-/**
- * @brief Structure to hold the result of an API call.
- * @param status_code HTTP status status_code (200, 400, 404, 500, etc.)
- * @param response_data Response data (JSON string, HTML, etc.) - caller must free
- * @param content_type Content type of the response (JSON, HTML, etc.)
- * @note The response string has to be freed by the caller if not NULL.
- */
-typedef struct Request_Handler_Response_t
-{
-  HTTP_Status_Code status_code;
-  char *response_data;
-  Http_Content_Type content_type;
-} Request_Handler_Response_t;
-
-/**
-  * @brief Function pointer type for route handlers
-  * @param params Query parameters extracted from the request
-  * @param response HTTP response structure to populate
-  */
-typedef int (*RouteHandler)(QueryParameters_t *params, Request_Handler_Response_t *response);
+#include "route_registry/route_registry.h"
 
 /**
  * @brief Initialize the request handler and register all routes.
  * Must be called once at application startup.
  * @return 0 on success, -1 on error
+ * @note The route registry is created inside this function.
  */
-int request_handler_init(int capacity);
+int request_handler_register_routes(RouteRegistry *registry, int capacity);
 
 /**
  * @brief Sets API result for responses with JSON content.
@@ -55,7 +36,7 @@ void request_handler_set_response(Request_Handler_Response_t *request_handler_re
  * @param request_handler_response Pointer to the HTTP response structure to populate.
  * @return HTTP status status_code of the response.
  */
-int request_handler_handle_request(Http_Request *request, Request_Handler_Response_t *request_handler_response);
+int request_handler_handle_request(RouteRegistry *registry,Http_Request * request, Request_Handler_Response_t *request_handler_response);
 
 /**
  * @brief Handles a HTTP request
@@ -66,18 +47,12 @@ int request_handler_handle_request(Http_Request *request, Request_Handler_Respon
  * @param status_code the HTTP status status_code to send back.
  * @return void.
  */
-void send_response_to_client(TCP_Server* server, TCP_Server_Client* client, char* response_string, Http_Content_Type type, HTTP_Status_Code status_code);
+void send_response_to_client(TCP_Server *server, TCP_Server_Client *client, char *response_string, Http_Content_Type type, HTTP_Status_Code status_code);
 
 /**
  * @brief Frees the memory allocated for a Request_Handler_Response_t structure.
  * @param request_handler_response Pointer to the Request_Handler_Response_t structure to free.
  */
 void dispose_request_handler_response(Request_Handler_Response_t *request_handler_response);
-
-/**
- * @brief Dispose of the request handler resources.
- * Must be called once at application shutdown.
- */
-void request_handler_dispose(void);
 
 #endif /* REQUEST_HANDLER_H */

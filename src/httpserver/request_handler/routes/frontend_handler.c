@@ -23,6 +23,7 @@ int frontend_handler_handle(QueryParameters_t *params, Request_Handler_Response_
     if (!found_frontend)
     {
         request_handler_set_response(request_handler_response, HTTP_STATUS_CODE_INTERNAL_SERVER_ERROR, HTTP_CONTENT_TYPE_HTML, NULL);
+        return HTTP_STATUS_CODE_INTERNAL_SERVER_ERROR; /* Frontend file not found 404 or other error? */
     }
     return request_handler_response->status_code;
 }

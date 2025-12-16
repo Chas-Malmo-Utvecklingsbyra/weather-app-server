@@ -1,8 +1,29 @@
 #ifndef ROUTE_REGISTRY_H
 #define ROUTE_REGISTRY_H
 
-#include "../request_handler.h"
 #include "../query_parameters/query_parameters.h"
+#include "core/http/http.h"
+
+/**
+ * @brief Structure to hold the result of an API call.
+ * @param status_code HTTP status status_code (200, 400, 404, 500, etc.)
+ * @param response_data Response data (JSON string, HTML, etc.) - caller must free
+ * @param content_type Content type of the response (JSON, HTML, etc.)
+ * @note The response string has to be freed by the caller if not NULL.
+ */
+typedef struct Request_Handler_Response_t
+{
+    HTTP_Status_Code status_code;
+    char *response_data;
+    Http_Content_Type content_type;
+} Request_Handler_Response_t;
+
+/**
+  * @brief Function pointer type for route handlers
+  * @param params Query parameters extracted from the request
+  * @param response HTTP response structure to populate
+  */
+typedef HTTP_Status_Code (*RouteHandler)(QueryParameters_t *params, Request_Handler_Response_t *response);
 
 /**
  * @brief Single route entry in the registry
@@ -18,7 +39,7 @@ typedef struct
 /**
  * @brief Route registry - manages all registered routes
  */
-typedef struct
+typedef struct RouteRegistry
 {
     RouteRegistry_Entry *entries;
     size_t count;
@@ -26,11 +47,11 @@ typedef struct
 } RouteRegistry;
 
 /**
- * @brief Create a new route registry with initial capacity
- * @param capacity Initial number of routes to allocate space for
- * @return Pointer to new RouteRegistry, or NULL on error
+ * @brief Create a new route registry
+ * @param capacity Initial capacity of the registry
+ * @return Pointer to the created registry, or NULL on error
  */
-RouteRegistry* route_registry_create(size_t capacity);
+bool route_registry_create(RouteRegistry *registry, size_t capacity);
 
 /**
  * @brief Register a new route
@@ -53,7 +74,7 @@ int route_registry_register(RouteRegistry *registry, const char *path, const cha
  * @return HTTP status code from the handler
  */
 HTTP_Status_Code route_registry_dispatch(RouteRegistry *registry, const char *path, const char *method, Request_Handler_Response_t *request_handler_response);
-    
+
 /**
  * @brief Free all resources associated with the registry
  * @param registry Pointer to the registry

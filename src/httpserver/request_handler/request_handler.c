@@ -1,41 +1,29 @@
 #include "request_handler.h"
-#include "route_registry/route_registry.h"
 #include "routes/weather_handler.h"
 #include "routes/city_handler.h"
 #include "routes/frontend_handler.h"
 #include <stdio.h>
 #include <assert.h>
 
-#define ROUTE_HANDLER_REGISTRY_COUNT 3
-
-/* TODO: LS - improve "request_handler_set_response" with predefined error msgs etc */
 /* TODO: LS - Change response types to enums */
 /* TODO: LS - Add logging for request handling */
-/* TODO: LS - "request_handler_init" create a more modular approach to config routes */
+/* TODO: LS - request_handler_register_routes fix parameter count magic number */
 
-/* Global route registry, needs to be initialized and disposed */
-static RouteRegistry *g_route_registry = NULL;
-
-int request_handler_init(int capacity)
+int request_handler_register_routes(RouteRegistry *registry, int capacity)
 {
     (void)capacity;  /* Unused parameter */
     
-    if (g_route_registry != NULL)
-        return -1;  /* Already initialized */
+    if (registry == NULL)
+        return -1;  /* not initialized */
 
-    g_route_registry = route_registry_create(ROUTE_HANDLER_REGISTRY_COUNT);
-    if (g_route_registry == NULL)
+    /* Register all routes */
+    if (route_registry_register(registry, "/v1/weather", "GET", 2, weather_handler_handle) != 0)
         return -1;
 
-    /* Register all routes */ 
-    /* Should be separated later */
-    if (route_registry_register(g_route_registry, "/v1/weather", "GET", 2, weather_handler_handle) != 0)
+    if (route_registry_register(registry, "/v1/city", "GET", 2, city_handler_handle) != 0)
         return -1;
 
-    if (route_registry_register(g_route_registry, "/v1/city", "GET", 2, city_handler_handle) != 0)
-        return -1;
-
-    if (route_registry_register(g_route_registry, "/", "GET", 0, frontend_handler_handle) != 0)
+    if (route_registry_register(registry, "/", "GET", 0, frontend_handler_handle) != 0)
         return -1;
 
     return 0;
@@ -58,27 +46,35 @@ static void request_handler_set_error_response(Request_Handler_Response_t *reque
     if (request_handler_response == NULL)
         return;
 
+    const char *error_msg = NULL;
+    
     switch (request_handler_response->status_code)
     {
         case HTTP_STATUS_CODE_BAD_REQUEST:
-            request_handler_response->response_data = strdup("{\"error\":\"Bad Request\"}");
+            error_msg = "{\"error\":\"Bad Request\"}";
             break;
         case HTTP_STATUS_CODE_NOT_FOUND:
-            request_handler_response->response_data = strdup("{\"error\":\"Not Found\"}");
+            error_msg = "{\"error\":\"Not Found\"}";
             break;
         case HTTP_STATUS_CODE_INTERNAL_SERVER_ERROR:
-            request_handler_response->response_data = strdup("{\"error\":\"Internal Server Error\"}");
+            error_msg = "{\"error\":\"Internal Server Error\"}";
             break;
         case HTTP_STATUS_CODE_SERVICE_UNAVAILABLE:
-            request_handler_response->response_data = strdup("{\"error\":\"Service Unavailable\"}");
+            error_msg = "{\"error\":\"Service Unavailable\"}";
             break;
         case HTTP_STATUS_CODE_BAD_GATEWAY:
-            request_handler_response->response_data = strdup("{\"error\":\"Bad Gateway\"}");
+            error_msg = "{\"error\":\"Bad Gateway\"}";
             break;
         default:
             request_handler_response->status_code = HTTP_STATUS_CODE_INTERNAL_SERVER_ERROR;
-            request_handler_response->response_data = strdup("{\"error\":\"Internal Server Error\"}"); /* Ensure valid error */
+            error_msg = "{\"error\":\"Internal Server Error\"}";
             break;
+    }
+    
+    request_handler_response->response_data = strdup(error_msg);
+    if (request_handler_response->response_data == NULL)
+    {
+        fprintf(stderr, "Warning: Failed to allocate memory for error response\n");
     }
 }
 
@@ -86,8 +82,8 @@ void request_handler_set_response(Request_Handler_Response_t *request_handler_re
 {
     if (request_handler_response == NULL)
         return;
-
-    if (status_code != HTTP_STATUS_CODE_OK || response_data == NULL)
+    
+    if (status_code != HTTP_STATUS_CODE_OK)
     {
         request_handler_response->status_code = status_code;
         request_handler_response->content_type = content_type;
@@ -95,16 +91,25 @@ void request_handler_set_response(Request_Handler_Response_t *request_handler_re
         return;
     }
 
-    request_handler_response->response_data = strdup(response_data);
     request_handler_response->status_code = status_code;
     request_handler_response->content_type = content_type;
+    request_handler_response->response_data = strdup(response_data);
+    if (request_handler_response->response_data == NULL)
+    {
+        fprintf(stderr, "Warning: Failed to allocate memory for response data\n");
+    }
 }
 
-int request_handler_handle_request(Http_Request *request, Request_Handler_Response_t *request_handler_response)
+int request_handler_handle_request(RouteRegistry *registry, Http_Request * request, Request_Handler_Response_t *request_handler_response)
 {
-    if (request == NULL || g_route_registry == NULL)
+    if (request == NULL)
     {
         request_handler_set_response(request_handler_response, HTTP_STATUS_CODE_BAD_REQUEST, HTTP_CONTENT_TYPE_JSON, NULL);
+        return request_handler_response->status_code;
+    }
+    if (registry == NULL)
+    {
+        request_handler_set_response(request_handler_response, HTTP_STATUS_CODE_INTERNAL_SERVER_ERROR, HTTP_CONTENT_TYPE_JSON, NULL);
         return request_handler_response->status_code;
     }
 
@@ -118,12 +123,11 @@ int request_handler_handle_request(Http_Request *request, Request_Handler_Respon
         return request_handler_response->status_code;
     }
     
-    /* TODO: LS - Set response here if error */
-    HTTP_Status_Code status_code = route_registry_dispatch(g_route_registry, request->start_line.path, method, request_handler_response);
-    
-    if (status_code != HTTP_STATUS_CODE_OK && request_handler_response->response_data == NULL) /* Ensure error response is set */
+
+    HTTP_Status_Code result_code = route_registry_dispatch(registry, request->start_line.path, method, request_handler_response);
+    if (result_code != HTTP_STATUS_CODE_OK) /* Ensure error response is set */
     {
-        request_handler_set_error_response(request_handler_response);
+        request_handler_set_response(request_handler_response, result_code, request_handler_response->content_type, NULL);
     }
     return request_handler_response->status_code;
 }
@@ -151,15 +155,5 @@ void dispose_request_handler_response(Request_Handler_Response_t *request_handle
     {
         free(request_handler_response->response_data);
         request_handler_response->response_data = NULL;
-    }
-}
-
-
-void request_handler_dispose(void)
-{
-    if (g_route_registry != NULL)
-    {
-        route_registry_dispose(g_route_registry);
-        g_route_registry = NULL;
     }
 }

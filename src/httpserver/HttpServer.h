@@ -1,4 +1,5 @@
 #include "core/tcp/server/tcp_server.h"
+#include "request_handler/route_registry/route_registry.h"
 #include <stdbool.h>
 
 
@@ -6,6 +7,7 @@ typedef struct
 {
     TCP_Server tcp_server;
     uint16_t port;
+    RouteRegistry route_registry;
 } HttpServer;
 
 
