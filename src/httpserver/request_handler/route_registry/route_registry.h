@@ -52,7 +52,7 @@ int route_registry_register(RouteRegistry *registry, const char *path, const cha
  * @param response HTTP response to populate
  * @return 0 on success, -1 if no matching route found
  */
-int route_registry_dispatch(RouteRegistry *registry, const char *path, const char *method, QueryParameters_t *params, Request_Handler_Response_t *response);
+int route_registry_dispatch(RouteRegistry *registry, const char *path, const char *method, Request_Handler_Response_t *request_handler_response);
 
 /**
  * @brief Get the argument count for a matched route

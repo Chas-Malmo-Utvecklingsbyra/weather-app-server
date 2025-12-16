@@ -72,22 +72,59 @@ int route_registry_get_args_count(RouteRegistry *registry, const char *path, con
     return -1;
 }
 
-int route_registry_dispatch(RouteRegistry *registry, const char *path, const char *method, QueryParameters_t *params, Request_Handler_Response_t *response)
+int route_registry_dispatch(RouteRegistry *registry, const char *path, const char *method, Request_Handler_Response_t *request_handler_response)
 {
-    if (registry == NULL || path == NULL || method == NULL || response == NULL)
+    bool params_initialized = false;
+    
+    if (registry == NULL || path == NULL || method == NULL || request_handler_response == NULL)
     {
-        return -1;
+        request_handler_set_response(request_handler_response, HTTP_STATUS_CODE_BAD_REQUEST, HTTP_CONTENT_TYPE_JSON, "{\"error\":\"Bad request\"}");
+        return request_handler_response->code;
     }
-
+    
     /* Search for matching route */
-    for (size_t i = 0; i < registry->count; i++)
+    size_t i = 0;
+    for (; i < registry->count; i++)
     {
         if (route_matcher_matches(path, method, registry->entries[i].path, registry->entries[i].method))
         {
-            return registry->entries[i].handler(params, response); /* Call the handler, expected to return HTTP status code */
+            QueryParameters_t query_parameters = {0};
+            
+            if (registry->entries[i].args_count > 0) /* Parse query parameters if expected */
+            {
+                
+                if (query_parameter_create(&query_parameters, registry->entries[i].args_count) != 0)
+                {
+                    request_handler_set_response(request_handler_response, HTTP_STATUS_CODE_INTERNAL_SERVER_ERROR, HTTP_CONTENT_TYPE_JSON, "{\"error\":\"Internal server error: memory allocation failed\"}");
+                    return request_handler_response->code;
+                }
+                params_initialized = true;
+                
+                if (query_parameter_parse(&query_parameters, path) != 0)
+                {
+                    query_parameter_dispose(&query_parameters);
+                    request_handler_set_response(request_handler_response, HTTP_STATUS_CODE_BAD_REQUEST, HTTP_CONTENT_TYPE_JSON, "{\"error\":\"Bad request\"}");
+                    return request_handler_response->code;
+                }
+            }
+            /* Call the handler, expected to return HTTP status code */
+            registry->entries[i].handler(&query_parameters, request_handler_response);
+            
+            if (params_initialized == true)
+            {
+                query_parameter_dispose(&query_parameters);
+                params_initialized = false;
+            }
+            
+            if (request_handler_response->response_data == NULL)
+            {
+                request_handler_set_response(request_handler_response, HTTP_STATUS_CODE_INTERNAL_SERVER_ERROR, HTTP_CONTENT_TYPE_JSON, "{\"error\":\"Internal server error: handler did not set data\"}");
+            }
+            
+            return request_handler_response->code;
         }
     }
-    return -1; /* No matching route found */
+    return HTTP_STATUS_CODE_NOT_FOUND; /* No matching route found */
 }
 
 void route_registry_dispose(RouteRegistry *registry)

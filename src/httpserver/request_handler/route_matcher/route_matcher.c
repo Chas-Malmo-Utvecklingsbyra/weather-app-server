@@ -24,6 +24,7 @@ static bool route_matcher_matches_path(const char *request_path, const char *rou
     
     if (strcmp(request_path, route_pattern) == 0)
     {
+        printf("Exact match for route request_path: %s route_pattern: %s\n", request_path, route_pattern);
         return true; /* Exact match */
     }
 
@@ -35,6 +36,7 @@ static bool route_matcher_matches_path(const char *request_path, const char *rou
         char next_char = request_path[route_len];
         if (next_char == '?' || next_char == '\0')
         {
+            printf("Exact match for route request_path: %s route_pattern: %s\n", request_path, route_pattern);
             return true;
         }
     }

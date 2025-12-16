@@ -26,21 +26,17 @@ void on_received_bytes_from_client(TCP_Server *server, TCP_Server_Client *client
         return;
     }
 
-    if(strcmp(Http_Request_Get_Method_String(httpblob), "OPTIONS") == 0)
-    {
-        send_response_to_client(server, client, "<h1>OPTIONS</h1>", HTTP_CONTENT_TYPE_HTML, HTTP_STATUS_CODE_BAD_REQUEST);
-    }
-    else
-    {
-        Request_Handler_Result_t api_result = {0};
-        handle_route(httpblob, &api_result);
-        
-        /* Note: api_result.code is int right now, not enum */
-        send_response_to_client(server, client, api_result.response, api_result.content_type, api_result.code);
+    Request_Handler_Response_t request_handler_response = {0};
+    memset(&request_handler_response, 0, sizeof(Request_Handler_Response_t));
 
-        dispose_request_handler_response(&api_result);
-    }
-
+    request_handler_handle_request(httpblob, &request_handler_response);
+    
+    printf("Responding with status code: %d\n", request_handler_response.code);
+    assert(request_handler_response.response_data != NULL);
+    
+    send_response_to_client(server, client, request_handler_response.response_data, request_handler_response.content_type, request_handler_response.code);
+    
+    dispose_request_handler_response(&request_handler_response);
     Http_Parser_Cleanup(httpblob);
 }
 
@@ -48,6 +44,12 @@ bool HttpServer_Initialize(HttpServer* http_server, size_t max_connections)
 {
     /* TODO: HW - Use this */
     (void)max_connections;
+
+    /* TODO: LS - temp for init routes */
+    if (request_handler_init(10) != 0)
+    {
+        return false; /* Failed to register api routes */
+    }
 
     memset(http_server, 0, sizeof(HttpServer));
     TCP_Server_Result server_init_result = tcp_server_init(

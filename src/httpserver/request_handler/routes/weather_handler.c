@@ -15,6 +15,7 @@ int weather_handler_handle(QueryParameters_t *params, Request_Handler_Response_t
 
     if (latitude == NULL || longitude == NULL)
     {
+        query_parameter_dispose(params);
         request_handler_set_response(http_response, HTTP_STATUS_CODE_BAD_REQUEST, HTTP_CONTENT_TYPE_JSON,
                           "{\"error\":\"Missing required parameters: latitude and longitude\"}");
         return http_response->code;
