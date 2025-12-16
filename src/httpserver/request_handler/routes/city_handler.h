@@ -12,12 +12,12 @@
  * @brief Handles the /v1/city endpoint request.
  *
  * Validates that city parameter is present,
- * fetches city data, and populates the result structure.
+ * fetches city location data, and populates the result structure.
  *
  * @param params Pointer to parsed query parameters
- * @param http_response Pointer to the result structure to populate
+ * @param request_handler_response Pointer to the result structure to populate
  * @return int HTTP status code (200, 400, 500, etc.)
  */
-int city_handler_handle(QueryParameters_t *params, Request_Handler_Response_t *http_response);
+int city_handler_handle(QueryParameters_t *params, Request_Handler_Response_t *request_handler_response);
 
 #endif /* CITY_HANDLER_H */

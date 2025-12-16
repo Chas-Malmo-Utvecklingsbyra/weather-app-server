@@ -30,12 +30,11 @@ void on_received_bytes_from_client(TCP_Server *server, TCP_Server_Client *client
     memset(&request_handler_response, 0, sizeof(Request_Handler_Response_t));
 
     request_handler_handle_request(httpblob, &request_handler_response);
-    
-    printf("Responding with status code: %d\n", request_handler_response.code);
+
     assert(request_handler_response.response_data != NULL);
-    
-    send_response_to_client(server, client, request_handler_response.response_data, request_handler_response.content_type, request_handler_response.code);
-    
+
+    send_response_to_client(server, client, request_handler_response.response_data, request_handler_response.content_type, request_handler_response.status_code);
+
     dispose_request_handler_response(&request_handler_response);
     Http_Parser_Cleanup(httpblob);
 }

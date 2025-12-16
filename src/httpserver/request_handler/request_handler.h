@@ -11,14 +11,14 @@
 
 /**
  * @brief Structure to hold the result of an API call.
- * @param code HTTP status code (200, 400, 404, 500, etc.)
+ * @param status_code HTTP status status_code (200, 400, 404, 500, etc.)
  * @param response_data Response data (JSON string, HTML, etc.) - caller must free
  * @param content_type Content type of the response (JSON, HTML, etc.)
  * @note The response string has to be freed by the caller if not NULL.
  */
 typedef struct Request_Handler_Response_t
 {
-  HTTP_Status_Code code;
+  HTTP_Status_Code status_code;
   char *response_data;
   Http_Content_Type content_type;
 } Request_Handler_Response_t;
@@ -38,19 +38,22 @@ typedef int (*RouteHandler)(QueryParameters_t *params, Request_Handler_Response_
 int request_handler_init(int capacity);
 
 /**
- * @brief Sets API result for error responses with JSON content.
+ * @brief Sets API result for responses with JSON content.
  * @param request_handler_response Pointer to the HTTP response structure.
- * @param code HTTP status code.
+ * @param status_code HTTP status status_code.
  * @param content_type Content type of the response.
- * @param message Error message (will be duplicated).
+ * @param response_data Response data (will be duplicated).
+ * @return void
+ * @note response_data should be NULL for error responses.
+ * 
  */
-void request_handler_set_response(Request_Handler_Response_t *request_handler_response, const HTTP_Status_Code code, const Http_Content_Type content_type, const char *message);
+void request_handler_set_response(Request_Handler_Response_t *request_handler_response, const HTTP_Status_Code status_code, const Http_Content_Type content_type, const char *response_data);
 
 /**
  * @brief Handles a HTTP request and populates the response structure.
  * @param request Pointer to the HTTP request structure.
  * @param request_handler_response Pointer to the HTTP response structure to populate.
- * @return HTTP status code of the response.
+ * @return HTTP status status_code of the response.
  */
 int request_handler_handle_request(Http_Request *request, Request_Handler_Response_t *request_handler_response);
 
@@ -60,7 +63,7 @@ int request_handler_handle_request(Http_Request *request, Request_Handler_Respon
  * @param client Pointer to the client structure.
  * @param response_string The response to send back.
  * @param type the content type (HTTP_CONTENT_TYPE_HTML or HTTP_CONTENT_TYPE_JSON).
- * @param status_code the HTTP status code to send back.
+ * @param status_code the HTTP status status_code to send back.
  * @return void.
  */
 void send_response_to_client(TCP_Server* server, TCP_Server_Client* client, char* response_string, Http_Content_Type type, HTTP_Status_Code status_code);

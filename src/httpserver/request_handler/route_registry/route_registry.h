@@ -50,19 +50,10 @@ int route_registry_register(RouteRegistry *registry, const char *path, const cha
  * @param method HTTP method
  * @param params Query parameters (may be NULL)
  * @param response HTTP response to populate
- * @return 0 on success, -1 if no matching route found
+ * @return HTTP status code from the handler
  */
-int route_registry_dispatch(RouteRegistry *registry, const char *path, const char *method, Request_Handler_Response_t *request_handler_response);
-
-/**
- * @brief Get the argument count for a matched route
- * @param registry Pointer to the registry
- * @param path Request path
- * @param method HTTP method
- * @return Number of expected arguments, or -1 if route not found
- */
-int route_registry_get_args_count(RouteRegistry *registry, const char *path, const char *method);
-
+HTTP_Status_Code route_registry_dispatch(RouteRegistry *registry, const char *path, const char *method, Request_Handler_Response_t *request_handler_response);
+    
 /**
  * @brief Free all resources associated with the registry
  * @param registry Pointer to the registry

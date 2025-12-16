@@ -14,6 +14,6 @@
  * @param result Pointer to the result structure to populate
  * @return int HTTP status code (200, 400, 500, etc.)
  */
-int weather_handler_handle(QueryParameters_t *params, Request_Handler_Response_t *http_response);
+int weather_handler_handle(QueryParameters_t *params, Request_Handler_Response_t *request_handler_response);
 
 #endif /* WEATHER_HANDLER_H */

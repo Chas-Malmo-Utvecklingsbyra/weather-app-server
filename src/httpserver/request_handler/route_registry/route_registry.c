@@ -55,31 +55,14 @@ int route_registry_register(RouteRegistry *registry, const char *path, const cha
     return 0;
 }
 
-int route_registry_get_args_count(RouteRegistry *registry, const char *path, const char *method)
-{
-    if (registry == NULL || path == NULL || method == NULL)
-    {
-        return -1;
-    }
-    /* Search for matching route */
-    for (size_t i = 0; i < registry->count; i++)
-    {
-        if (route_matcher_matches(path, method, registry->entries[i].path, registry->entries[i].method))
-        {
-            return (int)registry->entries[i].args_count;
-        }
-    }
-    return -1;
-}
-
-int route_registry_dispatch(RouteRegistry *registry, const char *path, const char *method, Request_Handler_Response_t *request_handler_response)
+HTTP_Status_Code route_registry_dispatch(RouteRegistry *registry, const char *path, const char *method, Request_Handler_Response_t *request_handler_response)
 {
     bool params_initialized = false;
     
     if (registry == NULL || path == NULL || method == NULL || request_handler_response == NULL)
     {
-        request_handler_set_response(request_handler_response, HTTP_STATUS_CODE_BAD_REQUEST, HTTP_CONTENT_TYPE_JSON, "{\"error\":\"Bad request\"}");
-        return request_handler_response->code;
+        request_handler_set_response(request_handler_response, HTTP_STATUS_CODE_BAD_REQUEST, HTTP_CONTENT_TYPE_JSON, NULL);
+        return request_handler_response->status_code;
     }
     
     /* Search for matching route */
@@ -89,42 +72,37 @@ int route_registry_dispatch(RouteRegistry *registry, const char *path, const cha
         if (route_matcher_matches(path, method, registry->entries[i].path, registry->entries[i].method))
         {
             QueryParameters_t query_parameters = {0};
+            memset(&query_parameters, 0, sizeof(QueryParameters_t));
             
             if (registry->entries[i].args_count > 0) /* Parse query parameters if expected */
             {
-                
                 if (query_parameter_create(&query_parameters, registry->entries[i].args_count) != 0)
                 {
-                    request_handler_set_response(request_handler_response, HTTP_STATUS_CODE_INTERNAL_SERVER_ERROR, HTTP_CONTENT_TYPE_JSON, "{\"error\":\"Internal server error: memory allocation failed\"}");
-                    return request_handler_response->code;
+                    request_handler_set_response(request_handler_response, HTTP_STATUS_CODE_INTERNAL_SERVER_ERROR, HTTP_CONTENT_TYPE_JSON, NULL);
+                    return request_handler_response->status_code;
                 }
                 params_initialized = true;
                 
                 if (query_parameter_parse(&query_parameters, path) != 0)
                 {
                     query_parameter_dispose(&query_parameters);
-                    request_handler_set_response(request_handler_response, HTTP_STATUS_CODE_BAD_REQUEST, HTTP_CONTENT_TYPE_JSON, "{\"error\":\"Bad request\"}");
-                    return request_handler_response->code;
+                    request_handler_set_response(request_handler_response, HTTP_STATUS_CODE_BAD_REQUEST, HTTP_CONTENT_TYPE_JSON, NULL);
+                    return request_handler_response->status_code;
                 }
             }
             /* Call the handler, expected to return HTTP status code */
             registry->entries[i].handler(&query_parameters, request_handler_response);
-            
             if (params_initialized == true)
             {
                 query_parameter_dispose(&query_parameters);
                 params_initialized = false;
             }
             
-            if (request_handler_response->response_data == NULL)
-            {
-                request_handler_set_response(request_handler_response, HTTP_STATUS_CODE_INTERNAL_SERVER_ERROR, HTTP_CONTENT_TYPE_JSON, "{\"error\":\"Internal server error: handler did not set data\"}");
-            }
-            
-            return request_handler_response->code;
+            return request_handler_response->status_code;
         }
     }
-    return HTTP_STATUS_CODE_NOT_FOUND; /* No matching route found */
+    request_handler_set_response(request_handler_response, HTTP_STATUS_CODE_NOT_FOUND, HTTP_CONTENT_TYPE_JSON, NULL);
+    return request_handler_response->status_code; /* No matching route found */
 }
 
 void route_registry_dispose(RouteRegistry *registry)

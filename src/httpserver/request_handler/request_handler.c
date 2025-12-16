@@ -41,13 +41,62 @@ int request_handler_init(int capacity)
     return 0;
 }
 
-void request_handler_set_response(Request_Handler_Response_t *request_handler_response, const HTTP_Status_Code code, const Http_Content_Type content_type, const char *message)
+static int request_handler_response_init(Request_Handler_Response_t *request_handler_response)
 {
-    if (request_handler_response == NULL || message == NULL)
+    if (request_handler_response == NULL)
+        return -1;
+
+    request_handler_response->status_code = HTTP_STATUS_CODE_UNDEFINED;
+    request_handler_response->response_data = NULL;
+    request_handler_response->content_type = HTTP_CONTENT_TYPE_JSON;
+
+    return 0;
+}
+
+static void request_handler_set_error_response(Request_Handler_Response_t *request_handler_response)
+{
+    if (request_handler_response == NULL)
         return;
 
-    request_handler_response->response_data = strdup(message);
-    request_handler_response->code = code;
+    switch (request_handler_response->status_code)
+    {
+        case HTTP_STATUS_CODE_BAD_REQUEST:
+            request_handler_response->response_data = strdup("{\"error\":\"Bad Request\"}");
+            break;
+        case HTTP_STATUS_CODE_NOT_FOUND:
+            request_handler_response->response_data = strdup("{\"error\":\"Not Found\"}");
+            break;
+        case HTTP_STATUS_CODE_INTERNAL_SERVER_ERROR:
+            request_handler_response->response_data = strdup("{\"error\":\"Internal Server Error\"}");
+            break;
+        case HTTP_STATUS_CODE_SERVICE_UNAVAILABLE:
+            request_handler_response->response_data = strdup("{\"error\":\"Service Unavailable\"}");
+            break;
+        case HTTP_STATUS_CODE_BAD_GATEWAY:
+            request_handler_response->response_data = strdup("{\"error\":\"Bad Gateway\"}");
+            break;
+        default:
+            request_handler_response->status_code = HTTP_STATUS_CODE_INTERNAL_SERVER_ERROR;
+            request_handler_response->response_data = strdup("{\"error\":\"Internal Server Error\"}"); /* Ensure valid error */
+            break;
+    }
+}
+
+void request_handler_set_response(Request_Handler_Response_t *request_handler_response, const HTTP_Status_Code status_code, const Http_Content_Type content_type, const char *response_data)
+{
+    if (request_handler_response == NULL)
+        return;
+
+    if (status_code != HTTP_STATUS_CODE_OK || response_data == NULL)
+    {
+        request_handler_response->status_code = status_code;
+        request_handler_response->content_type = content_type;
+        request_handler_set_error_response(request_handler_response);
+        return;
+    }
+
+    request_handler_response->response_data = strdup(response_data);
+    request_handler_response->status_code = status_code;
     request_handler_response->content_type = content_type;
 }
 
@@ -55,33 +104,28 @@ int request_handler_handle_request(Http_Request *request, Request_Handler_Respon
 {
     if (request == NULL || g_route_registry == NULL)
     {
-        request_handler_set_response(request_handler_response, HTTP_STATUS_CODE_BAD_REQUEST, HTTP_CONTENT_TYPE_JSON, "{\"error\":\"Bad Request\"}");
-        return request_handler_response->code;
+        request_handler_set_response(request_handler_response, HTTP_STATUS_CODE_BAD_REQUEST, HTTP_CONTENT_TYPE_JSON, NULL);
+        return request_handler_response->status_code;
     }
+
+    request_handler_response_init(request_handler_response);
 
     /* Handle ALL OPTIONS requests, should it always respond with OK? */
-    char* method = Http_Request_Get_Method_String(request);
-    
+    char *method = Http_Request_Get_Method_String(request);
     if (strcmp(method, "OPTIONS") == 0)
     {
-        request_handler_response->code = HTTP_STATUS_CODE_OK;
-        request_handler_response->content_type = HTTP_CONTENT_TYPE_HTML;
-        request_handler_response->response_data = strdup("<h1>OPTIONS</h1>");
-        return request_handler_response->code;
+        request_handler_set_response(request_handler_response, HTTP_STATUS_CODE_OK, HTTP_CONTENT_TYPE_HTML, "<h1>OPTIONS</h1>");
+        return request_handler_response->status_code;
     }
     
-    request_handler_response->code = HTTP_STATUS_CODE_UNDEFINED;
-    request_handler_response->response_data = NULL;
-    request_handler_response->content_type = HTTP_CONTENT_TYPE_JSON;
-
-    if (route_registry_dispatch(g_route_registry, request->start_line.path, method, request_handler_response) == HTTP_STATUS_CODE_NOT_FOUND)
-    {
-        printf("Route not found for path: %s method: %s\n", request->start_line.path, method);
-        request_handler_set_response(request_handler_response, HTTP_STATUS_CODE_NOT_FOUND, HTTP_CONTENT_TYPE_JSON, "{\"error\":\"Not Found\"}");
-    }
     /* TODO: LS - Set response here if error */
+    HTTP_Status_Code status_code = route_registry_dispatch(g_route_registry, request->start_line.path, method, request_handler_response);
     
-    return request_handler_response->code;
+    if (status_code != HTTP_STATUS_CODE_OK && request_handler_response->response_data == NULL) /* Ensure error response is set */
+    {
+        request_handler_set_error_response(request_handler_response);
+    }
+    return request_handler_response->status_code;
 }
 
 void send_response_to_client(TCP_Server* server, TCP_Server_Client* client, char* response_string, Http_Content_Type type, HTTP_Status_Code status_code)
