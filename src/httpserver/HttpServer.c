@@ -28,8 +28,6 @@ void on_received_bytes_from_client(void *context, TCP_Server *server, TCP_Server
     }
 
     Request_Handler_Response_t request_handler_response = {0};
-    memset(&request_handler_response, 0, sizeof(Request_Handler_Response_t));
-
     request_handler_handle_request(&http_server->route_registry, httpblob, &request_handler_response);
 
     assert(request_handler_response.response_data != NULL);
