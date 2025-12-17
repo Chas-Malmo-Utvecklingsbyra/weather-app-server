@@ -98,4 +98,7 @@ void route_registry_dispose(RouteRegistry *registry)
         free(registry->entries);
         registry->entries = NULL;
     }
+
+    registry->count = 0;
+    registry->capacity = 0;
 }
