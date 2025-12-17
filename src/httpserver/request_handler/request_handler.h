@@ -2,58 +2,41 @@
 #define REQUEST_HANDLER_H
 
 #include <string.h>
+#include <stdlib.h>
+#include "query_parameters/query_parameters.h"
+#include "core/string/strdup.h"
 #include "core/http/parser.h"
 #include "core/http/http.h"
 #include "core/tcp/server/tcp_server.h"
-
-#define QUERY_PARAMETER_MAX_LENGTH 256
+#include "route_registry/route_registry.h"
 
 /**
- * @brief Structure to hold the result of an API call.
- * @param code HTTP status code (200, 400, 404, 500, etc.)
- * @param response Response data (JSON string, HTML, etc.) - caller must free
- * @param content_type Content type of the response (JSON, HTML, etc.)
- * @note The response string has to be freed by the caller if not NULL.
+ * @brief Initialize the request handler and register all routes.
+ * Must be called once at application startup.
+ * @return 0 on success, -1 on error
+ * @note The route registry is created inside this function.
  */
-typedef struct Request_Handler_Result_t
-{
-  int code;
-  char *response;
-  Http_Content_Type content_type;
-} Request_Handler_Result_t;
+int request_handler_register_routes(RouteRegistry *registry, int capacity);
 
 /**
- * @brief Structure to hold query parameters parsed from a URL.
- * @param keys Array of parameter key strings
- * @param values Array of parameter value strings
- * @param count Number of parameters currently stored
- * @param capacity Maximum number of parameters that can be stored
+ * @brief Sets API result for responses with JSON content.
+ * @param request_handler_response Pointer to the HTTP response structure.
+ * @param status_code HTTP status status_code.
+ * @param content_type Content type of the response.
+ * @param response_data Response data (will be duplicated).
+ * @return void
+ * @note response_data should be NULL for error responses.
+ * 
  */
-typedef struct QueryParams_t
-{
-  char **keys;
-  char **values;
-  size_t count;
-  size_t capacity;
-} QueryParams_t;
-
-typedef enum Request_Handler_Result_E
-{
-  ROUTE_HANDLER_RESULT_UNKNOWN = -2,
-  ROUTE_HANDLER_RESULT_ERROR = -1,
-  ROUTE_HANDLER_RESULT_OK = 200,
-  ROUTE_HANDLER_RESULT_BAD_REQUEST = 400,
-  ROUTE_HANDLER_RESULT_NOT_FOUND = 404,
-  ROUTE_HANDLER_RESULT_INTERNAL_SERVER_ERROR = 500
-} Request_Handler_Result_E;
+void request_handler_set_response(Request_Handler_Response_t *request_handler_response, const HTTP_Status_Code status_code, const Http_Content_Type content_type, const char *response_data);
 
 /**
- * @brief Handles routing of HTTP requests to appropriate handlers.
+ * @brief Handles a HTTP request and populates the response structure.
  * @param request Pointer to the HTTP request structure.
- * @param api_result Pointer to the API result structure to populate.
- * @return HTTP status code indicating the result of the routing.
+ * @param request_handler_response Pointer to the HTTP response structure to populate.
+ * @return HTTP status status_code of the response.
  */
-int handle_route(Http_Request *request, Request_Handler_Result_t *api_result);
+int request_handler_handle_request(RouteRegistry *registry,Http_Request * request, Request_Handler_Response_t *request_handler_response);
 
 /**
  * @brief Handles a HTTP request
@@ -61,40 +44,15 @@ int handle_route(Http_Request *request, Request_Handler_Result_t *api_result);
  * @param client Pointer to the client structure.
  * @param response_string The response to send back.
  * @param type the content type (HTTP_CONTENT_TYPE_HTML or HTTP_CONTENT_TYPE_JSON).
+ * @param status_code the HTTP status status_code to send back.
  * @return void.
  */
-void send_response_to_client(TCP_Server* server, TCP_Server_Client* client, char* response_string, Http_Content_Type type, HTTP_Status_Code status_code);
+void send_response_to_client(TCP_Server *server, TCP_Server_Client *client, char *response_string, Http_Content_Type type, HTTP_Status_Code status_code);
 
 /**
- * @brief Creates a QueryParams_t structure with a specified capacity.
- * @param params Pointer to the QueryParams_t structure to initialize.
- * @param capacity The maximum number of parameters that can be stored.
- * @return int 0 on success, negative value on error.
+ * @brief Frees the memory allocated for a Request_Handler_Response_t structure.
+ * @param request_handler_response Pointer to the Request_Handler_Response_t structure to free.
  */
-int query_params_create(QueryParams_t *params, size_t capacity);
-
-/**
- * @brief Parses query parameters from a URL path into a QueryParams_t structure.
- * @param params Pointer to the QueryParams_t structure to populate.
- * @param path The URL path containing query parameters.
- * @return int 0 on success, negative value on error.
- */
-int query_params_parse(QueryParams_t *params, const char *path);
-
-/**
- * @brief Retrieves the value of a query parameter by key.
- * @param params Pointer to the QueryParams_t structure.
- * @param key The key of the query parameter to retrieve.
- * @return const char* The value of the query parameter, or NULL if not found.
- */
-const char *query_params_get(QueryParams_t *params, const char *key);
-
-/**
- * @brief Frees the memory allocated for a QueryParams_t structure.
- * @param params Pointer to the QueryParams_t structure to free.
- */
-void query_params_free(QueryParams_t *params);
-
-void dispose_request_handler_response(Request_Handler_Result_t* api_result);
+void dispose_request_handler_response(Request_Handler_Response_t *request_handler_response);
 
 #endif /* REQUEST_HANDLER_H */

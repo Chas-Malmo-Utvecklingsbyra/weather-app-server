@@ -14,8 +14,9 @@
 #include "core/weather/weather.h"
 #include "core/json/fileHelper/fileHelper.h"
 
-void on_received_bytes_from_client(TCP_Server *server, TCP_Server_Client *client, const uint8_t *buffer, const uint32_t buffer_size) {
-
+void on_received_bytes_from_client(void *context, TCP_Server *server, TCP_Server_Client *client, const uint8_t *buffer, const uint32_t buffer_size) 
+{
+    HttpServer* http_server = (HttpServer*)context;
     /* TODO: SS - Try to parse the contents of the request buffer as a HTTP-request. */
     printf("Received %u bytes from client:\n", buffer_size);
     
@@ -26,35 +27,39 @@ void on_received_bytes_from_client(TCP_Server *server, TCP_Server_Client *client
         return;
     }
 
-    if(strcmp(Http_Request_Get_Method_String(httpblob), "OPTIONS") == 0)
-    {
-        send_response_to_client(server, client, "<h1>OPTIONS</h1>", HTTP_CONTENT_TYPE_HTML, HTTP_STATUS_CODE_BAD_REQUEST);
-    }
-    else
-    {
-        Request_Handler_Result_t api_result = {0};
-        handle_route(httpblob, &api_result);
-        
-        /* Note: api_result.code is int right now, not enum */
-        send_response_to_client(server, client, api_result.response, api_result.content_type, api_result.code);
+    Request_Handler_Response_t request_handler_response = {0};
+    request_handler_handle_request(&http_server->route_registry, httpblob, &request_handler_response);
 
-        dispose_request_handler_response(&api_result);
-    }
+    assert(request_handler_response.response_data != NULL);
 
+    send_response_to_client(server, client, request_handler_response.response_data, request_handler_response.content_type, request_handler_response.status_code);
+
+    dispose_request_handler_response(&request_handler_response);
     Http_Parser_Cleanup(httpblob);
 }
-
 
 bool HttpServer_Initialize(HttpServer* http_server, size_t max_connections)
 {
     /* TODO: HW - Use this */
     (void)max_connections;
-
     memset(http_server, 0, sizeof(HttpServer));
+
+    /* TODO: LS - temp for init routes + magic number */
+    if (route_registry_create(&http_server->route_registry, 3) == false)
+    {
+        printf("Failed to create route registry.\n");
+        return false;
+    }
+    if (request_handler_register_routes(&http_server->route_registry, 3) != 0)
+    {
+        printf("Failed to register routes\n");
+        return false;
+    }
+
     TCP_Server_Result server_init_result = tcp_server_init(
-        &http_server->tcp_server,
-        &on_received_bytes_from_client
-    );
+            &http_server->tcp_server,
+            (void*)http_server,
+            &on_received_bytes_from_client);
 
     if(server_init_result != TCP_Server_Result_OK) 
     {
@@ -111,6 +116,7 @@ void HttpServer_Work(HttpServer* http_server)
 void HttpServer_Dispose(HttpServer* http_server)
 {
     assert(http_server != NULL);
+    route_registry_dispose(&http_server->route_registry);
     tcp_server_dispose(&http_server->tcp_server);
     http_server->port = 0;
 }

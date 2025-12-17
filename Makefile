@@ -5,7 +5,7 @@ LIBS = curl
 
 INCLUDE_DIRS = include src include/weather-app-shared
 INCLUDE_FILES = 
-CFLAGS = -std=$(C_VERSION) -Wall -Wextra -Werror -Wpedantic $(addprefix -include ,$(INCLUDE_FILES)) $(addprefix -I,$(INCLUDE_DIRS)) $(addprefix -l,$(LIBS))
+CFLAGS = -std=$(C_VERSION) -Wall -Wextra -Werror -Wpedantic $(addprefix -include ,$(INCLUDE_FILES)) $(addprefix -I,$(INCLUDE_DIRS)) $(addprefix -l,$(LIBS)) -g
 
 SRC_DIR := src
 SRC_FILES := $(shell find $(SRC_DIR) -name "*.c")
