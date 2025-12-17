@@ -148,6 +148,7 @@ void query_parameter_dispose(QueryParameters_t *param)
         for (size_t i = 0; i < param->capacity; i++)
         {
             free(param->keys[i]);
+            param->keys[i] = NULL;
         }
         free(param->keys);
         param->keys = NULL;
@@ -158,6 +159,7 @@ void query_parameter_dispose(QueryParameters_t *param)
         for (size_t i = 0; i < param->capacity; i++)
         {
             free(param->values[i]);
+            param->values[i] = NULL;
         }
         free(param->values);
         param->values = NULL;

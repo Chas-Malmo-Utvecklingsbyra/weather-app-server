@@ -94,5 +94,8 @@ void route_registry_dispose(RouteRegistry *registry)
         return;
 
     if (registry->entries != NULL)
+    {
         free(registry->entries);
+        registry->entries = NULL;
+    }
 }
