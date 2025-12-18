@@ -35,7 +35,7 @@ void on_received_bytes_from_client(void *context, TCP_Server *server, TCP_Server
     send_response_to_client(server, client, request_handler_response.response_data, request_handler_response.content_type, request_handler_response.status_code);
 
     dispose_request_handler_response(&request_handler_response);
-    Http_Parser_Cleanup(httpblob);
+    Http_Parser_Cleanup(&httpblob);
 }
 
 bool HttpServer_Initialize(HttpServer* http_server, size_t max_connections)
