@@ -16,8 +16,9 @@
  *
  * @param params Pointer to parsed query parameters
  * @param request_handler_response Pointer to the result structure to populate
+ * @param context Should be a char* containing the LocationIQ access token
  * @return int HTTP status code (200, 400, 500, etc.)
  */
-int city_handler_handle(QueryParameters_t *params, Request_Handler_Response_t *request_handler_response);
+int city_handler_handle(QueryParameters_t *params, Request_Handler_Response_t *request_handler_response, void *context);
 
 #endif /* CITY_HANDLER_H */

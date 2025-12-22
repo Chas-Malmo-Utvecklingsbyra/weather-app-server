@@ -1,9 +1,10 @@
 #include "frontend_handler.h"
 #include "core/json/fileHelper/fileHelper.h"
 
-int frontend_handler_handle(QueryParameters_t *params, Request_Handler_Response_t *request_handler_response)
+int frontend_handler_handle(QueryParameters_t *params, Request_Handler_Response_t *request_handler_response, void *context)
 {   
     (void)params;  /* Unused parameter */
+    (void)context; /* Unused parameter */
     /* Load frontend HTML file */
     static const char *file_locations[] = {"src/frontend/index.html", "frontend/index.html"};
     static const size_t location_count = sizeof(file_locations) / sizeof(file_locations[0]);

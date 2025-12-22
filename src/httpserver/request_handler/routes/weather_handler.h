@@ -12,8 +12,9 @@
  *
  * @param params Pointer to parsed query parameters
  * @param result Pointer to the result structure to populate
+ * @param context Optional context pointer for user data
  * @return int HTTP status code (200, 400, 500, etc.)
  */
-int weather_handler_handle(QueryParameters_t *params, Request_Handler_Response_t *request_handler_response);
+int weather_handler_handle(QueryParameters_t *params, Request_Handler_Response_t *request_handler_response, void *context);
 
 #endif /* WEATHER_HANDLER_H */

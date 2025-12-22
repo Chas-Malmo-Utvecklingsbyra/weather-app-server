@@ -20,7 +20,7 @@ bool route_registry_create(RouteRegistry *registry,size_t capacity)
     return true;
 }
 
-int route_registry_register(RouteRegistry *registry, const char *path, const char *method, size_t args_count, RouteHandler handler)
+int route_registry_register(RouteRegistry *registry, const char *path, const char *method, size_t args_count, RouteHandler handler, void *context)
 {
     if (registry == NULL || path == NULL || method == NULL || handler == NULL)
     {
@@ -37,6 +37,7 @@ int route_registry_register(RouteRegistry *registry, const char *path, const cha
     registry->entries[registry->count].method = method;
     registry->entries[registry->count].args_count = args_count;
     registry->entries[registry->count].handler = handler;
+    registry->entries[registry->count].context = context;
     registry->count++;
     return 0; /* Success */
 }
@@ -74,7 +75,7 @@ HTTP_Status_Code route_registry_dispatch(RouteRegistry *registry, const char *pa
                 }
             }
             /* Call the handler, expected to return HTTP status code */
-            HTTP_Status_Code status_code = registry->entries[i].handler(&query_parameters, request_handler_response);
+            HTTP_Status_Code status_code = registry->entries[i].handler(&query_parameters, request_handler_response, registry->entries[i].context);
             if (params_initialized == true)
             {
                 query_parameter_dispose(&query_parameters);
@@ -95,6 +96,16 @@ void route_registry_dispose(RouteRegistry *registry)
 
     if (registry->entries != NULL)
     {
+        /* Free context pointers for each entry */
+        for (size_t i = 0; i < registry->count; i++)
+        {
+            if (registry->entries[i].context != NULL)
+            {
+                free(registry->entries[i].context);
+                registry->entries[i].context = NULL;
+            }
+        }
+
         free(registry->entries);
         registry->entries = NULL;
     }

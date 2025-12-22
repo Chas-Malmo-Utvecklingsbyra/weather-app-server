@@ -2,8 +2,9 @@
 #include "core/locationiq/locationiq.h"
 #include "core/json/json_locationiq.h"
 
-int city_handler_handle(QueryParameters_t *params, Request_Handler_Response_t *request_handler_response)
+int city_handler_handle(QueryParameters_t *params, Request_Handler_Response_t *request_handler_response, void *context)
 {
+    char *access_token = (char *) context;
     if (params == NULL)
     {
         return HTTP_STATUS_CODE_INTERNAL_SERVER_ERROR;
@@ -18,7 +19,7 @@ int city_handler_handle(QueryParameters_t *params, Request_Handler_Response_t *r
     }
 
     /* Make request to get city information */
-    char *locationiq_api_response = locationiq_api_call(city, limit);
+    char *locationiq_api_response = locationiq_api_call(city, limit, access_token);
     if (locationiq_api_response == NULL)
     {
         return HTTP_STATUS_CODE_BAD_REQUEST;

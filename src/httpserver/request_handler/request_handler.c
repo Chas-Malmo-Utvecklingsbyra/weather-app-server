@@ -4,6 +4,7 @@
 #include "routes/frontend_handler.h"
 #include <stdio.h>
 #include <assert.h>
+#include "core/config/config.h"
 
 /* TODO: LS - Change response types to enums */
 /* TODO: LS - Add logging for request handling */
@@ -17,13 +18,31 @@ int request_handler_register_routes(RouteRegistry *registry, int capacity)
         return -1;  /* not initialized */
 
     /* Register all routes */
-    if (route_registry_register(registry, "/v1/weather", "GET", 2, weather_handler_handle) != 0)
+    if (route_registry_register(registry, "/v1/weather", "GET", 2, weather_handler_handle, NULL) != 0)
         return -1;
 
-    if (route_registry_register(registry, "/v1/city", "GET", 2, city_handler_handle) != 0)
+    char *locationiq_access_token = NULL; /* will be freed by route registry dispose */
+    if (locationiq_access_token == NULL)
+    {
+        Config_t *cfg = config_get_instance("settings.json"); /* Ensure config is loaded */
+        if (cfg != NULL)
+        {
+            if (cfg->locationiq_access_token != NULL)
+                locationiq_access_token = strdup(cfg->locationiq_access_token); /* has to be duplicated because config_instance_dispose will free the original */
+
+            config_instance_dispose();
+        }
+        if (locationiq_access_token == NULL)
+        {
+            fprintf(stderr, "Error: LocationIQ access token not found in configuration.\n");
+            return -1;
+        }
+    }
+
+    if (route_registry_register(registry, "/v1/city", "GET", 2, city_handler_handle, locationiq_access_token) != 0)
         return -1;
 
-    if (route_registry_register(registry, "/", "GET", 0, frontend_handler_handle) != 0)
+    if (route_registry_register(registry, "/", "GET", 0, frontend_handler_handle, NULL) != 0)
         return -1;
 
     return 0;
@@ -102,6 +121,7 @@ void request_handler_set_response(Request_Handler_Response_t *request_handler_re
 
 int request_handler_handle_request(RouteRegistry *registry, Http_Request * request, Request_Handler_Response_t *request_handler_response)
 {
+    
     if (request == NULL)
     {
         request_handler_set_response(request_handler_response, HTTP_STATUS_CODE_BAD_REQUEST, HTTP_CONTENT_TYPE_JSON, NULL);

@@ -1,8 +1,10 @@
 #include "weather_handler.h"
 #include "core/weather/weather.h"
 
-int weather_handler_handle(QueryParameters_t *params, Request_Handler_Response_t *request_handler_response)
-{    
+int weather_handler_handle(QueryParameters_t *params, Request_Handler_Response_t *request_handler_response, void *context)
+{
+    (void)context; /* Unused parameter */
+    
     if (params == NULL)
     {
         return HTTP_STATUS_CODE_INTERNAL_SERVER_ERROR;

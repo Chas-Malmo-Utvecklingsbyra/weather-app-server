@@ -23,7 +23,7 @@ typedef struct Request_Handler_Response_t
   * @param params Query parameters extracted from the request
   * @param response HTTP response structure to populate
   */
-typedef HTTP_Status_Code (*RouteHandler)(QueryParameters_t *params, Request_Handler_Response_t *response);
+typedef HTTP_Status_Code (*RouteHandler)(QueryParameters_t *params, Request_Handler_Response_t *response, void *context);
 
 /**
  * @brief Single route entry in the registry
@@ -34,6 +34,7 @@ typedef struct
     const char *method;         /* HTTP method (e.g., "GET") */
     size_t args_count;          /* Expected number of arguments */
     RouteHandler handler;       /* Handler function for this route */
+    void *context;              /* Optional context pointer for user data */
 } RouteRegistry_Entry;
 
 /**
@@ -62,7 +63,7 @@ bool route_registry_create(RouteRegistry *registry, size_t capacity);
  * @param handler Function pointer to handle this route
  * @return 0 on success, -1 on error
  */
-int route_registry_register(RouteRegistry *registry, const char *path, const char *method, size_t args_count, RouteHandler handler);
+int route_registry_register(RouteRegistry *registry, const char *path, const char *method, size_t args_count, RouteHandler handler, void *context);
 
 /**
  * @brief Find and execute a handler for a request
