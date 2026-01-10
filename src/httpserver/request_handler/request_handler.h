@@ -31,12 +31,12 @@ int request_handler_register_routes(RouteRegistry *registry, int capacity);
 void request_handler_set_response(Request_Handler_Response_t *request_handler_response, const HTTP_Status_Code status_code, const Http_Content_Type content_type, const char *response_data);
 
 /**
- * @brief Handles a HTTP request and populates the response structure.
+ * @brief Handles a HTTP request and returns the response structure.
+ * @param registry Pointer to the route registry.
  * @param request Pointer to the HTTP request structure.
- * @param request_handler_response Pointer to the HTTP response structure to populate.
- * @return HTTP status status_code of the response.
+ * @return Request_Handler_Response_t The HTTP response structure.
  */
-int request_handler_handle_request(RouteRegistry *registry,Http_Request * request, Request_Handler_Response_t *request_handler_response);
+Request_Handler_Response_t request_handler_handle_request(RouteRegistry *registry, Http_Request *request);
 
 /**
  * @brief Handles a HTTP request

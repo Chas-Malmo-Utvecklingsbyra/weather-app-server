@@ -1,18 +1,9 @@
 #include "HttpServer.h"
-
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
-
 #include "request_handler/request_handler.h"
-#include "core/weather/http.h"
-#include "core/weather/api.h"
-#include "core/string/strdup.h"
-#include "core/http/parser.h"
-#include "core/http/http.h"
-#include "core/weather/weather.h"
-#include "core/json/fileHelper/fileHelper.h"
 
 void on_received_bytes_from_client(void *context, TCP_Server *server, TCP_Server_Client *client, const uint8_t *buffer, const uint32_t buffer_size) 
 {
@@ -27,8 +18,7 @@ void on_received_bytes_from_client(void *context, TCP_Server *server, TCP_Server
         return;
     }
 
-    Request_Handler_Response_t request_handler_response = {0};
-    request_handler_handle_request(&http_server->route_registry, httpblob, &request_handler_response);
+    Request_Handler_Response_t request_handler_response = request_handler_handle_request(&http_server->route_registry, httpblob);
 
     assert(request_handler_response.response_data != NULL);
 
@@ -45,12 +35,12 @@ bool HttpServer_Initialize(HttpServer* http_server, size_t max_connections)
     memset(http_server, 0, sizeof(HttpServer));
 
     /* TODO: LS - temp for init routes + magic number */
-    if (route_registry_create(&http_server->route_registry, 3) == false)
+    if (route_registry_create(&http_server->route_registry, ROUTE_REGISTRY_ROUTE_COUNT) == false)
     {
         printf("Failed to create route registry.\n");
         return false;
     }
-    if (request_handler_register_routes(&http_server->route_registry, 3) != 0)
+    if (request_handler_register_routes(&http_server->route_registry, ROUTE_REGISTRY_ROUTE_COUNT) != 0)
     {
         printf("Failed to register routes\n");
         return false;
@@ -73,7 +63,6 @@ bool HttpServer_Initialize(HttpServer* http_server, size_t max_connections)
 
 bool HttpServer_Start(HttpServer* http_server, uint16_t port)
 {
-    
     if (http_server->port != 0)
     {
         printf("Server has not yet been initialized\n");

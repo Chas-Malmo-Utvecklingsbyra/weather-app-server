@@ -119,37 +119,36 @@ void request_handler_set_response(Request_Handler_Response_t *request_handler_re
     }
 }
 
-int request_handler_handle_request(RouteRegistry *registry, Http_Request * request, Request_Handler_Response_t *request_handler_response)
+Request_Handler_Response_t request_handler_handle_request(RouteRegistry *registry, Http_Request *request)
 {
+    Request_Handler_Response_t response = {0};
     
     if (request == NULL)
     {
-        request_handler_set_response(request_handler_response, HTTP_STATUS_CODE_BAD_REQUEST, HTTP_CONTENT_TYPE_JSON, NULL);
-        return request_handler_response->status_code;
+        request_handler_set_response(&response, HTTP_STATUS_CODE_BAD_REQUEST, HTTP_CONTENT_TYPE_JSON, NULL);
+        return response;
     }
     if (registry == NULL)
     {
-        request_handler_set_response(request_handler_response, HTTP_STATUS_CODE_INTERNAL_SERVER_ERROR, HTTP_CONTENT_TYPE_JSON, NULL);
-        return request_handler_response->status_code;
+        request_handler_set_response(&response, HTTP_STATUS_CODE_INTERNAL_SERVER_ERROR, HTTP_CONTENT_TYPE_JSON, NULL);
+        return response;
     }
 
-    request_handler_response_init(request_handler_response);
+    request_handler_response_init(&response);
 
-    /* Handle ALL OPTIONS requests, should it always respond with OK? */
     char *method = Http_Request_Get_Method_String(request);
-    if (strcmp(method, "OPTIONS") == 0)
+    if (strcmp(method, "OPTIONS") == 0) /* Handle ALL OPTIONS requests */
     {
-        request_handler_set_response(request_handler_response, HTTP_STATUS_CODE_OK, HTTP_CONTENT_TYPE_HTML, "<h1>OPTIONS</h1>");
-        return request_handler_response->status_code;
+        request_handler_set_response(&response, HTTP_STATUS_CODE_OK, HTTP_CONTENT_TYPE_HTML, "<h1>OPTIONS</h1>");
+        return response;
     }
     
-
-    HTTP_Status_Code result_code = route_registry_dispatch(registry, request->start_line.path, method, request_handler_response);
+    HTTP_Status_Code result_code = route_registry_dispatch(registry, request->start_line.path, method, &response);
     if (result_code != HTTP_STATUS_CODE_OK) /* Ensure error response is set */
     {
-        request_handler_set_response(request_handler_response, result_code, request_handler_response->content_type, NULL);
+        request_handler_set_response(&response, result_code, response.content_type, NULL);
     }
-    return request_handler_response->status_code;
+    return response;
 }
 
 void send_response_to_client(TCP_Server* server, TCP_Server_Client* client, char* response_string, Http_Content_Type type, HTTP_Status_Code status_code)

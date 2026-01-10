@@ -4,7 +4,7 @@
 #include <string.h>
 #include <stdio.h>
 
-bool route_registry_create(RouteRegistry *registry,size_t capacity)
+bool route_registry_create(RouteRegistry *registry, size_t capacity)
 {
     if (registry == NULL || capacity <= 0)
         return false;
@@ -44,7 +44,6 @@ int route_registry_register(RouteRegistry *registry, const char *path, const cha
 
 HTTP_Status_Code route_registry_dispatch(RouteRegistry *registry, const char *path, const char *method, Request_Handler_Response_t *request_handler_response)
 {
-    bool params_initialized = false;
     
     if (registry == NULL || path == NULL || method == NULL || request_handler_response == NULL)
     {
@@ -66,7 +65,6 @@ HTTP_Status_Code route_registry_dispatch(RouteRegistry *registry, const char *pa
                 {
                     return HTTP_STATUS_CODE_INTERNAL_SERVER_ERROR;
                 }
-                params_initialized = true;
                 
                 if (query_parameter_parse(&query_parameters, path) != 0)
                 {
@@ -76,13 +74,8 @@ HTTP_Status_Code route_registry_dispatch(RouteRegistry *registry, const char *pa
             }
             /* Call the handler, expected to return HTTP status code */
             HTTP_Status_Code status_code = registry->entries[i].handler(&query_parameters, request_handler_response, registry->entries[i].context);
-            if (params_initialized == true)
-            {
-                query_parameter_dispose(&query_parameters);
-                params_initialized = false;
-            }
+            query_parameter_dispose(&query_parameters);
             
-            //return request_handler_response->status_code;
             return status_code;
         }
     }

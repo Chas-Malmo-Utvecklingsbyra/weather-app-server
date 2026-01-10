@@ -8,7 +8,8 @@ INCLUDE_FILES =
 CFLAGS = -std=$(C_VERSION) -Wall -Wextra -Werror -Wpedantic $(addprefix -include ,$(INCLUDE_FILES)) $(addprefix -I,$(INCLUDE_DIRS)) $(addprefix -l,$(LIBS)) -g
 
 SRC_DIR := src
-SRC_FILES := $(shell find $(SRC_DIR) -name "*.c")
+# Exclude test folders from main build
+SRC_FILES := $(shell find $(SRC_DIR) -name "*.c" -not -path "*/tests/*")
 
 export BUILD_DIR := $(CURDIR)/build
 export OBJ_DIR := $(BUILD_DIR)/obj
@@ -53,7 +54,11 @@ run: $(BIN)
 clean:
 	@rm -rf $(BUILD_DIR)
 
+test:
+	@echo "Running tests..."
+	@$(MAKE) -C tests test
+
 valgrind:
 	valgrind --leak-check=yes $(BIN)
 
-.PHONY: all build_core build_program clean
+.PHONY: all build_core build_program clean test valgrind run

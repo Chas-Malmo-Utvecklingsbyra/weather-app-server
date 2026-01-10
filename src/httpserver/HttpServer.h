@@ -2,6 +2,7 @@
 #include "request_handler/route_registry/route_registry.h"
 #include <stdbool.h>
 
+#define ROUTE_REGISTRY_ROUTE_COUNT 3
 
 typedef struct
 {

@@ -15,10 +15,7 @@ int weather_handler_handle(QueryParameters_t *params, Request_Handler_Response_t
     const char *longitude = query_parameter_get(params, "longitude");
     
     if (latitude == NULL || longitude == NULL)
-    {
-        query_parameter_dispose(params);
         return HTTP_STATUS_CODE_BAD_REQUEST;
-    }
 
     /* try to get weather data */
     Weather_Response weather_response = weather_get_data(latitude, longitude);
@@ -28,6 +25,7 @@ int weather_handler_handle(QueryParameters_t *params, Request_Handler_Response_t
     }
     /* convert to json */
     char *weather_response_json = weather_convert_response_to_json(&weather_response);
+    
     if (weather_response_json == NULL)
     {
         return HTTP_STATUS_CODE_INTERNAL_SERVER_ERROR;
