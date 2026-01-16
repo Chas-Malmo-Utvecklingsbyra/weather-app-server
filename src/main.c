@@ -10,17 +10,24 @@ int main(void)
     size_t max_connections = 1024;
     
     {   /* Tries to overwrite default HTTP server settings using config file */
-        Config_t* cfg = config_get_instance("settings.json");
+        Config_t* cfg = Config_Get_Instance("settings.json");
 
         if (cfg != NULL)
         {
-            if (cfg->config_server_port > 0)
-                port = cfg->config_server_port;
-    
-            if (cfg->config_max_connections > 0)
-                max_connections = cfg->config_max_connections;
+            bool found = false;
+            port = Config_Get_Field_Value_Integer(cfg, "server_port", &found);
+            if (found && port > 0)
+                port = port;
+            else
+                port = 8080; /* reset to default if not found */
+
+            max_connections = Config_Get_Field_Value_Integer(cfg, "max_connections", &found);
+            if (found || max_connections >= 1)
+                max_connections = max_connections;
+            else
+                max_connections = 1024; /* reset to default if not found */
             
-            config_instance_dispose();
+            Config_Instance_Dispose();
         }
     }
     

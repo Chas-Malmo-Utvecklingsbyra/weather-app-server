@@ -22,22 +22,20 @@ int request_handler_register_routes(RouteRegistry *registry, int capacity)
         return -1;
 
     char *locationiq_access_token = NULL; /* will be freed by route registry dispose */
-    if (locationiq_access_token == NULL)
+    Config_t *cfg = Config_Get_Instance("settings.json"); /* Ensure config is loaded */
+    if (cfg != NULL)
     {
-        Config_t *cfg = config_get_instance("settings.json"); /* Ensure config is loaded */
-        if (cfg != NULL)
-        {
-            if (cfg->locationiq_access_token != NULL)
-                locationiq_access_token = strdup(cfg->locationiq_access_token); /* has to be duplicated because config_instance_dispose will free the original */
-
-            config_instance_dispose();
-        }
-        if (locationiq_access_token == NULL)
+        locationiq_access_token = Config_Get_Field_Value_String(cfg, "locationiq_access_token");
+        if (locationiq_access_token != NULL)
+            locationiq_access_token = strdup(locationiq_access_token); /* has to be duplicated because Config_Instance_Dispose will free the original */
+        else
         {
             fprintf(stderr, "Error: LocationIQ access token not found in configuration.\n");
             return -1;
         }
+        Config_Instance_Dispose();
     }
+    
 
     if (route_registry_register(registry, "/v1/city", "GET", 2, city_handler_handle, locationiq_access_token) != 0)
         return -1;
